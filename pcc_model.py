@@ -6,9 +6,9 @@ torch.set_default_dtype(torch.float64)
 # torch.manual_seed(0)
 
 class PCC(nn.Module):
-    def __init__(self, armotized, x_dim, z_dim, u_dim, env = 'planar', iwae=False, k=50):
+    def __init__(self, armotized, x_dim, z_dim, u_dim, env):
         super(PCC, self).__init__()
-        enc, dec, dyn, back_dyn = load_config(env)
+        enc, dyn, back_dyn = load_config(env)
 
         self.x_dim = x_dim
         self.z_dim = z_dim
@@ -16,18 +16,11 @@ class PCC(nn.Module):
         self.armotized = armotized
 
         self.encoder = enc(x_dim, z_dim)
-        self.decoder = dec(z_dim, x_dim)
         self.dynamics = dyn(armotized, z_dim, u_dim)
         self.backward_dynamics = back_dyn(z_dim, u_dim, x_dim)
 
-        self.iwae = iwae
-        self.k_iwae = k
-
     def encode(self, x):
         return self.encoder(x)
-
-    def decode(self, z):
-        return self.decoder(z)
 
     def transition(self, z, u):
         return self.dynamics(z, u)
@@ -36,112 +29,24 @@ class PCC(nn.Module):
         return self.backward_dynamics(z, u, x)
 
     def reparam(self, mean, std):
-        # sigma = (logvar / 2).exp()
         epsilon = torch.randn_like(std)
         return mean + torch.mul(epsilon, std)
 
     def forward(self, x, u, x_next):
-        # prediction and consistency loss
-        # 1st term and 3rd
-        q_z_next = self.encode(x_next) # Q(z^_t+1 | x_t+1)
-        z_next = self.reparam(q_z_next.mean, q_z_next.stddev) # sample z^_t+1
-        p_x_next = self.decode(z_next) # P(x_t+1 | z^t_t+1)
-        # 2nd term
-        q_z_backward = self.back_dynamics(z_next, u, x) # Q(z_t | z^_t+1, u_t, x_t)
-        p_z = self.encode(x) # P(z_t | x_t)
+        # NCE loss
+        z_enc_dist = self.encode(x)  # P(z_t | x_t)
+        z_enc = self.reparam(z_enc_dist.mean, z_enc_dist.stddev) # sample z_t from P(z_t | x_t)
+        z_next_trans_dist, _, _ = self.transition(z_enc, u) # P(z^_t+1 | z_t, u _t)
 
-        # 4th term
-        z_q = self.reparam(q_z_backward.mean, q_z_backward.stddev) # samples from Q(z_t | z^_t+1, u_t, x_t)
-        p_z_next, _, _ = self.transition(z_q, u) # P(z^_t+1 | z_t, u _t)
+        z_next_enc_dist = self.encode(x_next)  # Q(z^_t+1 | x_t+1)
+        z_next_enc = self.reparam(z_next_enc_dist.mean, z_next_enc_dist.stddev)  # sample z^_t+1 from Q(z^_t+1 | x_t+1)
 
-        # additional VAE loss
-        z_p = self.reparam(p_z_next.mean, p_z_next.stddev) # samples from P(z_t | x_t)
-        p_x = self.decode(z_p) # for additional vae loss
+        # consistency loss
+        # 2nd and 3rd term
+        z_backward_dist = self.back_dynamics(z_next_enc, u, x) # Q(z_t | z^_t+1, u_t, x_t)
+        z_backward = self.reparam(z_backward_dist.mean, z_backward_dist.stddev) # sample z_t from Q(z_t | z^_t+1, u_t, x_t)
+        z_next_back_trans_dist, _, _ = self.transition(z_backward, u)
 
-        # additional deterministic loss
-        mu_z_next_determ = self.transition(p_z.mean, u)[0].mean
-        p_x_next_determ = self.decode(mu_z_next_determ)
-
-        return p_x_next, \
-                q_z_backward, p_z, \
-                q_z_next, \
-                z_next, p_z_next, \
-                z_p, u, p_x, p_x_next_determ
-
-    def predict(self, x, u):
-        mu, logvar = self.encoder(x)
-        z = self.reparam(mu, logvar)
-        x_recon = self.decode(z)
-
-        mu_next, logvar_next, A, B = self.transition(z, u)
-        z_next = self.reparam(mu_next, logvar_next)
-        x_next_pred = self.decode(z_next)
-        return x_recon, x_next_pred
-
-# def reparam(mean, logvar):
-#     sigma = (logvar / 2).exp()
-#     epsilon = torch.randn_like(sigma)
-#     return mean + torch.mul(epsilon, sigma)
-
-# def jacobian_1(dynamics, z, u):
-#     """
-#     compute the jacobian of F(z,u) w.r.t z, u
-#     """
-#     z_dim, u_dim = z.size(1), u.size(1)
-#     z, u = z.squeeze().repeat(z_dim, 1), u.squeeze().repeat(z_dim, 1)
-#     z = z.detach().requires_grad_(True)
-#     u = u.detach().requires_grad_(True)
-#     z_next, _, _, _ = dynamics(z, u)
-#     grad_inp = torch.eye(z_dim)
-#     A = torch.autograd.grad(z_next, z, grad_inp, retain_graph=True)[0]
-#     B = torch.autograd.grad(z_next, u, grad_inp, retain_graph=True)[0]
-#     return A, B
-
-# def jacobian_2(dynamics, z, u):
-#     """
-#     compute the jacobian of F(z,u) w.r.t z, u
-#     """
-#     z_dim, u_dim = z.size(1), u.size(1)
-#     z = z.detach().requires_grad_(True)
-#     u = u.detach().requires_grad_(True)
-#     z_next, _, _, _ = dynamics(z, u)
-#     A = torch.empty(size=(z_dim, z_dim))
-#     B = torch.empty(size=(z_dim, u_dim))
-#     for i in range(A.size(0)): # for each row
-#         grad_inp = torch.zeros(size=(1, A.size(0)))
-#         grad_inp[0][i] = 1
-#         A[i] = torch.autograd.grad(z_next, z, grad_inp, retain_graph=True)[0]
-#     for i in range(B.size(0)): # for each row
-#         grad_inp = torch.zeros(size=(1, B.size(0)))
-#         grad_inp[0][i] = 1
-#         B[i] = torch.autograd.grad(z_next, u, grad_inp, retain_graph=True)[0]
-#     return A, B
-
-# enc, dec, dyn, back_dyn = load_config('planar')
-# dynamics = dyn(armotized=False, z_dim=2, u_dim=2)
-# dynamics.eval()
-
-# import torch.optim as optim
-# optimizer = optim.Adam(dynamics.parameters(), betas=(0.9, 0.999), eps=1e-8, lr=0.001)
-
-# z = torch.randn(size=(1, 2))
-# z.requires_grad = True
-# u = torch.randn(size=(1, 2))
-# u.requires_grad = True
-
-# eps_z = torch.normal(0.0, 0.1, size=z.size())
-# eps_u = torch.normal(0.0, 0.1, size=u.size())
-
-# mean, logvar, _, _ = dynamics(z, u)
-# grad_z = torch.autograd.grad(mean, z, grad_outputs=eps_z, retain_graph=True, create_graph=True)
-# grad_u = torch.autograd.grad(mean, u, grad_outputs=eps_u, retain_graph=True, create_graph=True)
-# print ('AAA')
-# print (grad_z, grad_u)
-# A, B = jacobian_1(dynamics, z, u)
-# grad_z, grad_u = eps_z.mm(A), eps_u.mm(B)
-# print ('BBBB')
-# print (grad_z, grad_u)
-# A, B = jacobian_1(dynamics, z, u)
-# grad_z, grad_u = eps_z.mm(A), eps_u.mm(B)
-# print ('BBBB')
-# print (grad_z, grad_u)
+        return z_enc_dist, z_enc, z_next_trans_dist, \
+                z_next_enc_dist, z_next_enc, \
+                z_backward_dist, z_backward, z_next_back_trans_dist

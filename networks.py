@@ -1,7 +1,6 @@
 import torch
 from torch import nn
 from torch.distributions.normal import Normal
-from torch.distributions.bernoulli import Bernoulli
 from torch.distributions.independent import Independent
 
 torch.set_default_dtype(torch.float64)
@@ -27,20 +26,6 @@ class Encoder(nn.Module):
         mean = self.net_mean(hidden_neurons)
         logstd = self.net_logstd(hidden_neurons)
         return MultivariateNormalDiag(mean, torch.exp(logstd))
-
-class Decoder(nn.Module):
-    # P(x_t+1 | z^_t+1)
-    def __init__(self, net_hidden, net_logits, z_dim, x_dim):
-        super(Decoder, self).__init__()
-        self.net_hidden = net_hidden
-        self.net_logits = net_logits
-        self.z_dim = z_dim
-        self.x_dim = x_dim
-
-    def forward(self, z):
-        hidden_neurons = self.net_hidden(z)
-        logits = self.net_logits(hidden_neurons)
-        return Bernoulli(logits=logits)
 
 class Dynamics(nn.Module):
     # P(z^_t+1 | z_t, u_t)
@@ -104,18 +89,6 @@ class PlanarEncoder(Encoder):
         net_logstd = nn.Linear(300, z_dim)
         super(PlanarEncoder, self).__init__(net_hidden, net_mean, net_logstd, x_dim, z_dim)
 
-class PlanarDecoder(Decoder):
-    def __init__(self, z_dim = 2, x_dim = 1600):
-        net_hidden = nn.Sequential(
-            nn.Linear(z_dim, 300),
-            nn.ReLU(),
-
-            nn.Linear(300, 300),
-            nn.ReLU(),
-        )
-        net_logits = nn.Linear(300, x_dim)
-        super(PlanarDecoder, self).__init__(net_hidden, net_logits, z_dim, x_dim)
-
 class PlanarDynamics(Dynamics):
     def __init__(self, armotized, z_dim = 2, u_dim = 2):
         net_hidden = nn.Sequential(
@@ -159,18 +132,6 @@ class PendulumEncoder(Encoder):
         net_mean = nn.Linear(500, z_dim)
         net_logstd = nn.Linear(500, z_dim)
         super(PendulumEncoder, self).__init__(net_hidden, net_mean, net_logstd, x_dim, z_dim)
-
-class PendulumDecoder(Decoder):
-    def __init__(self, z_dim = 3, x_dim = 4608):
-        net_hidden = nn.Sequential(
-            nn.Linear(z_dim, 500),
-            nn.ReLU(),
-
-            nn.Linear(500, 500),
-            nn.ReLU(),
-        )
-        net_logits = nn.Linear(500, x_dim)
-        super(PendulumDecoder, self).__init__(net_hidden, net_logits, z_dim, x_dim)
 
 class PendulumDynamics(Dynamics):
     def __init__(self, armotized, z_dim = 3, u_dim = 1):
@@ -243,36 +204,6 @@ class CartPoleEncoder(Encoder):
         net_logstd = nn.Linear(200, z_dim)
         super(CartPoleEncoder, self).__init__(net_hidden, net_mean, net_logstd, x_dim, z_dim)
 
-class CartPoleDecoder(Decoder):
-    def __init__(self, z_dim=8, x_dim=(2, 80, 80)):
-        x_channels = x_dim[0]
-        net_hidden = nn.Sequential(
-            nn.Linear(z_dim, 200),
-            nn.ReLU(),
-
-            nn.Linear(200, 1000),
-            nn.ReLU(),
-
-            View((-1, 10, 10, 10)),
-
-            nn.ConvTranspose2d(in_channels=10, out_channels=32, kernel_size=5, stride=1, padding=2),
-            nn.Upsample(scale_factor=2),
-            nn.ReLU(),
-
-            nn.ConvTranspose2d(in_channels=32, out_channels=32, kernel_size=5, stride=1, padding=2),
-            nn.Upsample(scale_factor=2),
-            nn.ReLU(),
-
-            nn.ConvTranspose2d(in_channels=32, out_channels=32, kernel_size=5, stride=1, padding=2),
-            nn.Upsample(scale_factor=2),
-            nn.ReLU(),
-        )
-        net_logits = nn.Sequential(
-            nn.ConvTranspose2d(in_channels=32, out_channels=x_channels, kernel_size=5, stride=1, padding=2),
-            Flatten(),
-        )
-        super(CartPoleDecoder, self).__init__(net_hidden, net_logits, z_dim, x_dim)
-
 class CartPoleDynamics(Dynamics):
     def __init__(self, armotized, z_dim=8, u_dim=1):
         net_hidden = nn.Sequential(
@@ -309,18 +240,12 @@ class CartPoleBackwardDynamics(BackwardDynamics):
         super(CartPoleBackwardDynamics, self).__init__(net_z, net_u, net_x, net_joint_hidden, net_joint_mean, net_joint_logstd, z_dim, u_dim, x_dim)
 
 CONFIG = {
-    'planar': (PlanarEncoder, PlanarDecoder, PlanarDynamics, PlanarBackwardDynamics),
-    'pendulum': (PendulumEncoder, PendulumDecoder, PendulumDynamics, PendulumBackwardDynamics),
-    'cartpole': (CartPoleEncoder, CartPoleDecoder, CartPoleDynamics, CartPoleBackwardDynamics)
+    'planar': (PlanarEncoder, PlanarDynamics, PlanarBackwardDynamics),
+    'pendulum': (PendulumEncoder, PendulumDynamics, PendulumBackwardDynamics),
+    'cartpole': (CartPoleEncoder, CartPoleDynamics, CartPoleBackwardDynamics)
 }
 
 def load_config(name):
     return CONFIG[name]
 
 __all__ = ['load_config']
-
-# device = torch.device("cuda")
-# cartpole_encoder = CartPoleEncoder()
-# cartpole_encoder.to(device)
-# # cartpole_encoder.net[0].to(device)
-# print (next(cartpole_encoder.net[0].parameters()).is_cuda)
