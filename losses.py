@@ -1,5 +1,6 @@
 import torch
 from networks import MultivariateNormalDiag
+import sys
 
 torch.set_default_dtype(torch.float64)
 
@@ -18,18 +19,22 @@ def nce(z_next_trans_dist, z_next_enc):
 
     # scores[i, j] = p(z'_j | z_i, u_i)
     scores = z_next_trans_dist_rep.log_prob(z_next_enc_rep).view(batch_size, batch_size)
+    if torch.isnan(scores).sum() > 0:
+        print('NaN detected: ' + str(torch.isnan(scores).sum().item()))
+        print (scores)
+        sys.exit()
     # print ('Before normalize: ' + str(scores))
     with torch.no_grad():
         normalize = torch.min(scores, dim=-1)[0].detach()
         # print ('Normalize: ' + str(normalize))
     scores = scores - normalize
     # print ('After normalize: ' + str(scores))
-    scores = torch.exp(scores)
+    exp_scores = torch.exp(scores)
     # print ('After exp: ' + str(scores))
 
     # compute nce loss
-    positive_samples = scores.diag()
-    avg_negative_samples = torch.mean(scores, dim=-1)
+    positive_samples = exp_scores.diag()
+    avg_negative_samples = torch.mean(exp_scores, dim=-1)
     # print (avg_negative_samples)
     return - torch.mean(positive_samples / avg_negative_samples)
 
