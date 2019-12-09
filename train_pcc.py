@@ -52,8 +52,8 @@ def compute_loss(model, armotized, u,
                                                          torch.ones_like(z_enc_dist.stddev))))
 
     lam_nce, lam_c, lam_cur = lam
-    # return nce_loss, consis_loss, cur_loss, lam_nce * nce_loss + lam_c * consis_loss + lam_cur * cur_loss + norm_coeff * norm_loss
-    return nce_loss, consis_loss, cur_loss, lam_nce * nce_loss
+    return nce_loss, consis_loss, cur_loss, lam_nce * nce_loss + lam_c * consis_loss + lam_cur * cur_loss + norm_coeff * norm_loss
+    # return nce_loss, consis_loss, cur_loss, lam_nce * nce_loss
 
 def train(model, train_loader, lam, norm_coeff, optimizer, armotized, epoch):
     avg_nce_loss = 0.0
@@ -63,7 +63,8 @@ def train(model, train_loader, lam, norm_coeff, optimizer, armotized, epoch):
 
     num_batches = len(train_loader)
     model.train()
-    for x, u, x_next in train_loader:
+    for iter, (x, u, x_next) in enumerate(train_loader):
+        # print ('epoch %d minibatch %d' %(epoch, iter))
         x = x.to(device).double()
         u = u.to(device).double()
         x_next = x_next.to(device).double()
@@ -93,7 +94,7 @@ def train(model, train_loader, lam, norm_coeff, optimizer, armotized, epoch):
     avg_cur_loss /= num_batches
     avg_loss /= num_batches
 
-    if (epoch + 1) % 10 == 0:
+    if (epoch + 1) % 1 == 0:
         print('Epoch %d' % (epoch+1))
         print("NCE loss: %f" % (avg_nce_loss))
         print("Consistency loss: %f" % (avg_consis_loss))
@@ -202,8 +203,8 @@ if __name__ == "__main__":
     parser.add_argument('--data_size', required=True, type=int, help='the bumber of data points used for training')
     parser.add_argument('--noise', default=0, type=int, help='the level of noise')
     parser.add_argument('--batch_size', default=128, type=int, help='batch size')
-    parser.add_argument('--lam_nce', default=2.0, type=float, help='weight of prediction loss')
-    parser.add_argument('--lam_c', default=1.0, type=float, help='weight of consistency loss')
+    parser.add_argument('--lam_nce', default=1.0, type=float, help='weight of prediction loss')
+    parser.add_argument('--lam_c', default=10.0, type=float, help='weight of consistency loss')
     parser.add_argument('--lam_cur', default=8.0, type=float, help='weight of curvature loss')
     parser.add_argument('--norm_coeff', default=0.01, type=float, help='coefficient of additional normalization loss')
     parser.add_argument('--lr', default=0.0005, type=float, help='learning rate')
