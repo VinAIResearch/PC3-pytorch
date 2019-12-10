@@ -64,7 +64,6 @@ def train(model, train_loader, lam, norm_coeff, optimizer, armotized, epoch):
     num_batches = len(train_loader)
     model.train()
     for iter, (x, u, x_next) in enumerate(train_loader):
-        # print ('epoch %d minibatch %d' %(epoch, iter))
         x = x.to(device).double()
         u = u.to(device).double()
         x_next = x_next.to(device).double()
@@ -116,7 +115,7 @@ def main(args):
     lam_nce = args.lam_nce
     lam_c = args.lam_c
     lam_cur = args.lam_cur
-    lam = (lam_nce, lam_c, lam_cur)
+    lam = [lam_nce, lam_c, lam_cur]
     norm_coeff = args.norm_coeff
     lr = args.lr
     weight_decay = args.decay
@@ -153,8 +152,8 @@ def main(args):
     if env_name == 'planar' and save_map:
         latent_maps = [draw_latent_map(model, mdp)]
     for i in range(epoches):
-        avg_pred_loss, avg_consis_loss, avg_cur_loss, avg_loss = train(model, data_loader, lam,
-                                                                       norm_coeff, optimizer, armotized, i)
+        avg_pred_loss, avg_consis_loss, avg_cur_loss, avg_loss = train(model, data_loader,
+                                                                lam, norm_coeff, optimizer, armotized, i)
         scheduler.step()
 
         # ...log the running loss
@@ -202,10 +201,10 @@ if __name__ == "__main__":
     parser.add_argument('--seed', required=True, type=int, help='seed number')
     parser.add_argument('--data_size', required=True, type=int, help='the bumber of data points used for training')
     parser.add_argument('--noise', default=0, type=int, help='the level of noise')
-    parser.add_argument('--batch_size', default=128, type=int, help='batch size')
+    parser.add_argument('--batch_size', default=256, type=int, help='batch size')
     parser.add_argument('--lam_nce', default=1.0, type=float, help='weight of prediction loss')
-    parser.add_argument('--lam_c', default=10.0, type=float, help='weight of consistency loss')
-    parser.add_argument('--lam_cur', default=8.0, type=float, help='weight of curvature loss')
+    parser.add_argument('--lam_c', default=0.1, type=float, help='weight of consistency loss')
+    parser.add_argument('--lam_cur', default=4.0, type=float, help='weight of curvature loss')
     parser.add_argument('--norm_coeff', default=0.01, type=float, help='coefficient of additional normalization loss')
     parser.add_argument('--lr', default=0.0005, type=float, help='learning rate')
     parser.add_argument('--decay', default=0.001, type=float, help='L2 regularization')

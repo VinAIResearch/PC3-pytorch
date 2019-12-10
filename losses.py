@@ -32,7 +32,7 @@ def nce(z_next_trans_dist, z_next_enc):
     positive_samples = scores.diag()
     avg_negative_samples = torch.mean(scores, dim=-1)
     # print (avg_negative_samples)
-    return - torch.mean(positive_samples / avg_negative_samples)
+    return - torch.mean(torch.log(positive_samples / avg_negative_samples + 1e-8))
 
 def curvature(model, z, u, delta, armotized):
     z_alias = z.detach().requires_grad_(True)
