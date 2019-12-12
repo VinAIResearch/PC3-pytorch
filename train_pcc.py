@@ -47,13 +47,12 @@ def compute_loss(model, armotized, u,
     cur_loss = curvature(model, z_enc, u, delta, armotized)
     # new_cur_loss = new_curvature(model, z_enc, u)
 
-    # additional norm lossL to normalize the latent space
+    # additional norm loss to normalize the latent space
     norm_loss = torch.mean(kl_divergence(z_enc_dist, MultivariateNormalDiag(torch.zeros_like(z_enc_dist.mean),
                                                          torch.ones_like(z_enc_dist.stddev))))
 
     lam_nce, lam_c, lam_cur = lam
     return nce_loss, consis_loss, cur_loss, lam_nce * nce_loss + lam_c * consis_loss + lam_cur * cur_loss + norm_coeff * norm_loss
-    # return nce_loss, consis_loss, cur_loss, lam_nce * nce_loss
 
 def train(model, train_loader, lam, norm_coeff, optimizer, armotized, epoch):
     avg_nce_loss = 0.0
@@ -86,7 +85,7 @@ def train(model, train_loader, lam, norm_coeff, optimizer, armotized, epoch):
         avg_nce_loss += nce_loss.item()
         avg_consis_loss += consis_loss.item()
         avg_cur_loss += cur_loss.item()
-        avg_loss += loss
+        avg_loss += loss.item()
 
     avg_nce_loss /= num_batches
     avg_consis_loss /= num_batches
@@ -202,9 +201,9 @@ if __name__ == "__main__":
     parser.add_argument('--data_size', required=True, type=int, help='the bumber of data points used for training')
     parser.add_argument('--noise', default=0, type=int, help='the level of noise')
     parser.add_argument('--batch_size', default=256, type=int, help='batch size')
-    parser.add_argument('--lam_nce', default=1.0, type=float, help='weight of prediction loss')
-    parser.add_argument('--lam_c', default=0.1, type=float, help='weight of consistency loss')
-    parser.add_argument('--lam_cur', default=4.0, type=float, help='weight of curvature loss')
+    parser.add_argument('--lam_nce', default=2.0, type=float, help='weight of prediction loss')
+    parser.add_argument('--lam_c', default=1.0, type=float, help='weight of consistency loss')
+    parser.add_argument('--lam_cur', default=1.0, type=float, help='weight of curvature loss')
     parser.add_argument('--norm_coeff', default=0.01, type=float, help='coefficient of additional normalization loss')
     parser.add_argument('--lr', default=0.0005, type=float, help='learning rate')
     parser.add_argument('--decay', default=0.001, type=float, help='L2 regularization')

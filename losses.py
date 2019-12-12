@@ -12,6 +12,10 @@ def repeat_dist(dist, bacth_size, z_dim):
     return MultivariateNormalDiag(mean, sttdev)
 
 def nce(z_next_trans_dist, z_next_enc):
+    """
+    z_next_trans_dist: p(.|z, u)
+    z_next_enc: samples from p(.|x')
+    """
     batch_size, z_dim = z_next_enc.size(0), z_next_enc.size(1)
 
     z_next_trans_dist_rep = repeat_dist(z_next_trans_dist, batch_size, z_dim)
@@ -19,19 +23,14 @@ def nce(z_next_trans_dist, z_next_enc):
 
     # scores[i, j] = p(z'_j | z_i, u_i)
     scores = z_next_trans_dist_rep.log_prob(z_next_enc_rep).view(batch_size, batch_size)
-    # print(scores)
-    if torch.isnan(scores).sum() > 0:
-        print('NaN detected: ' + str(torch.isnan(scores).sum().item()))
-        sys.exit()
     with torch.no_grad():
         normalize = torch.max(scores, dim=-1)[0].view(-1,1)
     scores = scores - normalize
     scores = torch.exp(scores)
 
-    # compute nce loss
+    # I_NCE
     positive_samples = scores.diag()
     avg_negative_samples = torch.mean(scores, dim=-1)
-    # print (avg_negative_samples)
     return - torch.mean(torch.log(positive_samples / avg_negative_samples + 1e-8))
 
 def curvature(model, z, u, delta, armotized):
@@ -39,7 +38,7 @@ def curvature(model, z, u, delta, armotized):
     u_alias = u.detach().requires_grad_(True)
     eps_z = torch.normal(mean=torch.zeros_like(z), std=torch.empty_like(z).fill_(delta))
     eps_u = torch.normal(mean=torch.zeros_like(u), std=torch.empty_like(u).fill_(delta))
-    # print ('eps u ' + str(eps_u.size()))
+
     z_bar = z_alias + eps_z
     u_bar = u_alias + eps_u
 
@@ -47,7 +46,7 @@ def curvature(model, z, u, delta, armotized):
     f_z_bar = f_z_bar.mean
     f_z, A, B = model.transition(z_alias, u_alias)
     f_z = f_z.mean
-    # print ('f_z ' + str(f_z.size()))
+
     if not armotized:
         grad_z, grad_u = torch.autograd.grad(f_z, [z_alias, u_alias], grad_outputs=[eps_z, eps_u], retain_graph=True, create_graph=True)
         taylor_error = f_z_bar - (grad_z + grad_u) - f_z
