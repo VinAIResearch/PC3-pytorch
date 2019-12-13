@@ -10,6 +10,12 @@ def MultivariateNormalDiag(loc, scale_diag):
         raise ValueError("loc must be at least one-dimensional.")
     return Independent(Normal(loc, scale_diag), 1)
 
+def weights_init(m):
+    if type(m) in [nn.Conv2d, nn.Linear, nn.ConvTranspose2d]:
+        # torch.nn.init.xavier_normal_(m.weight)
+        # torch.nn.init.xavier_uniform_(m.weight, gain=torch.nn.init.calculate_gain('relu'))
+        torch.nn.init.kaiming_uniform_(m.weight, mode='fan_in', nonlinearity='relu')
+
 class Encoder(nn.Module):
     # P(z_t | x_t) and Q(z^_t+1 | x_t+1)
     def __init__(self, net_hidden, net_mean, net_logstd, x_dim, z_dim):
@@ -19,6 +25,10 @@ class Encoder(nn.Module):
         self.net_logstd = net_logstd
         self.x_dim = x_dim
         self.z_dim = z_dim
+
+        self.net_hidden.apply(weights_init)
+        self.net_mean.apply(weights_init)
+        self.net_logstd.apply(weights_init)
 
     def forward(self, x):
         # mean and variance of p(z|x)
@@ -39,6 +49,13 @@ class Dynamics(nn.Module):
         self.z_dim = z_dim
         self.u_dim = u_dim
         self.armotized = armotized
+
+        self.net_hidden.apply(weights_init)
+        self.net_mean.apply(weights_init)
+        self.net_logstd.apply(weights_init)
+        if armotized:
+            self.net_A.apply(weights_init)
+            self.net_B.apply(weights_init)
 
     def forward(self, z_t, u_t):
         z_u_t = torch.cat((z_t, u_t), dim = -1)
@@ -65,6 +82,13 @@ class BackwardDynamics(nn.Module):
         self.z_dim = z_dim
         self.u_dim = u_dim
         self.x_dim = x_dim
+
+        self.net_z.apply(weights_init)
+        self.net_u.apply(weights_init)
+        self.net_x.apply(weights_init)
+        self.net_joint_hidden.apply(weights_init)
+        self.net_joint_mean.apply(weights_init)
+        self.net_joint_logstd.apply(weights_init)
 
     def forward(self, z_t, u_t, x_t):
         z_t_out = self.net_z(z_t)
