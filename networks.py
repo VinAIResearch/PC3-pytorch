@@ -26,9 +26,9 @@ class Encoder(nn.Module):
         self.x_dim = x_dim
         self.z_dim = z_dim
 
-        self.net_hidden.apply(weights_init)
-        self.net_mean.apply(weights_init)
-        self.net_logstd.apply(weights_init)
+        # self.net_hidden.apply(weights_init)
+        # self.net_mean.apply(weights_init)
+        # self.net_logstd.apply(weights_init)
 
     def forward(self, x):
         # mean and variance of p(z|x)
@@ -50,12 +50,12 @@ class Dynamics(nn.Module):
         self.u_dim = u_dim
         self.armotized = armotized
 
-        self.net_hidden.apply(weights_init)
-        self.net_mean.apply(weights_init)
-        self.net_logstd.apply(weights_init)
-        if armotized:
-            self.net_A.apply(weights_init)
-            self.net_B.apply(weights_init)
+        # self.net_hidden.apply(weights_init)
+        # self.net_mean.apply(weights_init)
+        # self.net_logstd.apply(weights_init)
+        # if armotized:
+        #     self.net_A.apply(weights_init)
+        #     self.net_B.apply(weights_init)
 
     def forward(self, z_t, u_t):
         z_u_t = torch.cat((z_t, u_t), dim = -1)
@@ -83,12 +83,12 @@ class BackwardDynamics(nn.Module):
         self.u_dim = u_dim
         self.x_dim = x_dim
 
-        self.net_z.apply(weights_init)
-        self.net_u.apply(weights_init)
-        self.net_x.apply(weights_init)
-        self.net_joint_hidden.apply(weights_init)
-        self.net_joint_mean.apply(weights_init)
-        self.net_joint_logstd.apply(weights_init)
+        # self.net_z.apply(weights_init)
+        # self.net_u.apply(weights_init)
+        # self.net_x.apply(weights_init)
+        # self.net_joint_hidden.apply(weights_init)
+        # self.net_joint_mean.apply(weights_init)
+        # self.net_joint_logstd.apply(weights_init)
 
     def forward(self, z_t, u_t, x_t):
         z_t_out = self.net_z(z_t)

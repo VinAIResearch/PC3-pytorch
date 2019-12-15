@@ -62,6 +62,7 @@ def train(model, train_loader, lam, norm_coeff, optimizer, armotized, epoch):
 
     num_batches = len(train_loader)
     model.train()
+
     for iter, (x, u, x_next) in enumerate(train_loader):
         x = x.to(device).double()
         u = u.to(device).double()

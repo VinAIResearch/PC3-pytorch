@@ -194,7 +194,6 @@ def main(args):
         f.write('Average percentage of all models: ' + str(avg_model_percent) + '\n')
         f.write('Best model: ' + best_model + ', best percentage: ' + str(best_model_percent))
 
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='run iLQR')
     parser.add_argument('--env', required=True, type=str, help='environment to perform')
