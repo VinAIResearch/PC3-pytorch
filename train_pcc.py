@@ -200,7 +200,7 @@ if __name__ == "__main__":
     parser.add_argument('--noise', default=0, type=int, help='the level of noise')
     parser.add_argument('--batch_size', default=256, type=int, help='batch size')
     parser.add_argument('--lam_nce', default=2.0, type=float, help='weight of prediction loss')
-    parser.add_argument('--lam_c', default=1.0, type=float, help='weight of consistency loss')
+    parser.add_argument('--lam_c', default=2.0, type=float, help='weight of consistency loss')
     parser.add_argument('--lam_cur', default=1.0, type=float, help='weight of curvature loss')
     parser.add_argument('--norm_coeff', default=0.01, type=float, help='coefficient of additional normalization loss')
     parser.add_argument('--lr', default=0.0005, type=float, help='learning rate')

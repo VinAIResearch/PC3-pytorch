@@ -55,7 +55,7 @@ def main(args):
 
         # load the trained model
         model = PCC(armotized, x_dim, z_dim, u_dim, env_name)
-        model.load_state_dict(torch.load(log + '/model_5000', map_location='cpu'))
+        model.load_state_dict(torch.load(log + '/model_1000', map_location='cpu'))
         model.eval()
         dynamics = model.dynamics
         encoder = model.encoder
