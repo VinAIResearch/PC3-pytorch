@@ -1,6 +1,5 @@
 from tensorboardX import SummaryWriter
 import torch
-from torch.distributions.kl import kl_divergence
 import torch.optim as optim
 from torch.utils.data import DataLoader
 import random
@@ -31,27 +30,23 @@ def seed_torch(seed):
     torch.backends.cudnn.deterministic = True
 
 def compute_loss(model, armotized, u,
-                z_enc_dist, z_enc, z_next_trans_dist,
-                z_next_enc_dist, z_next_enc,
-                z_backward_dist, z_next_back_trans_dist,
+                z_enc, z_next_trans_dist, z_next_enc,
                 lam, delta=0.1, norm_coeff=0.01):
     # nce and consistency loss
     nce_loss = nce(z_next_trans_dist, z_next_enc)
 
-    consis_loss = - torch.mean(z_next_enc_dist.entropy()) \
-                  - torch.mean(z_next_back_trans_dist.log_prob(z_next_enc)) \
-                  + torch.mean(kl_divergence(z_backward_dist, z_enc_dist))
+    consis_loss = - torch.mean(z_next_trans_dist.log_prob(z_next_enc)) 
 
     # curvature loss
     cur_loss = curvature(model, z_enc, u, delta, armotized)
     # new_cur_loss = new_curvature(model, z_enc, u)
 
     # additional norm loss to normalize the latent space
-    norm_loss = torch.mean(kl_divergence(z_enc_dist, MultivariateNormalDiag(torch.zeros_like(z_enc_dist.mean),
-                                                         torch.ones_like(z_enc_dist.stddev))))
+    norm_loss = latent_constraint(z_enc)
 
     lam_nce, lam_c, lam_cur = lam
     return nce_loss, consis_loss, cur_loss, lam_nce * nce_loss + lam_c * consis_loss + lam_cur * cur_loss + norm_coeff * norm_loss
+    # return nce_loss, consis_loss, cur_loss, lam_nce * nce_loss + lam_c * consis_loss + lam_cur * cur_loss
 
 def train(model, train_loader, lam, norm_coeff, optimizer, armotized, epoch):
     avg_nce_loss = 0.0
@@ -68,15 +63,11 @@ def train(model, train_loader, lam, norm_coeff, optimizer, armotized, epoch):
         x_next = x_next.to(device).double()
         optimizer.zero_grad()
 
-        z_enc_dist, z_enc, z_next_trans_dist, \
-        z_next_enc_dist, z_next_enc, \
-        z_backward_dist, z_backward, z_next_back_trans_dist = model(x, u, x_next)
+        z_enc, z_next_trans_dist, z_next_enc = model(x, u, x_next)
 
         nce_loss, consis_loss, cur_loss, loss = compute_loss(
                 model, armotized, u,
-                z_enc_dist, z_enc, z_next_trans_dist,
-                z_next_enc_dist, z_next_enc,
-                z_backward_dist, z_next_back_trans_dist,
+                z_enc, z_next_trans_dist, z_next_enc,
                 lam=lam, norm_coeff=norm_coeff)
 
         loss.backward()
@@ -199,8 +190,8 @@ if __name__ == "__main__":
     parser.add_argument('--data_size', required=True, type=int, help='the bumber of data points used for training')
     parser.add_argument('--noise', default=0, type=int, help='the level of noise')
     parser.add_argument('--batch_size', default=256, type=int, help='batch size')
-    parser.add_argument('--lam_nce', default=2.0, type=float, help='weight of prediction loss')
-    parser.add_argument('--lam_c', default=2.0, type=float, help='weight of consistency loss')
+    parser.add_argument('--lam_nce', default=1.0, type=float, help='weight of prediction loss')
+    parser.add_argument('--lam_c', default=1.0, type=float, help='weight of consistency loss')
     parser.add_argument('--lam_cur', default=1.0, type=float, help='weight of curvature loss')
     parser.add_argument('--norm_coeff', default=0.01, type=float, help='coefficient of additional normalization loss')
     parser.add_argument('--lr', default=0.0005, type=float, help='learning rate')

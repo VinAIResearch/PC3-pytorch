@@ -66,14 +66,14 @@ def draw_latent_map(model, mdp):
                     obs = torch.Tensor(mdp.render(s)).unsqueeze(0).view(-1,1600).double()
                     if next(model.parameters()).is_cuda:
                         obs = obs.cuda()
-                    mu = model.encode(obs).mean
+                    mu = model.encode(obs)
                 z = mu.squeeze().cpu().numpy()
                 all_z.append(np.copy(z))
     all_z = np.array(all_z)
 
     # normalize and scale to plot
     z_min = np.min(all_z, axis = 0)
-    all_z = np.round(20 * (all_z - z_min) + 30).astype(np.int)
+    all_z = np.round(100 * (all_z - z_min) + 30).astype(np.int)
 
     # plot
     latent_map = {}
