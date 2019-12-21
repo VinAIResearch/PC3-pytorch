@@ -77,10 +77,3 @@ def new_curvature(model, z, u):
     # print ('z next u: ' + str(cov_z_z_next / var_prod_z_z_next))
     # return - cov_z_z_next / var_prod_z_z_next - cov_u_z_next / var_prod_u_z_next
     return - cov_z_z_next / var_prod_z_z_next
-
-def latent_constraint(z_enc):
-    z_enc_dist = MultivariateNormalDiag(z_enc, torch.ones_like(z_enc))
-
-    norm_loss = torch.mean(kl_divergence(z_enc_dist, MultivariateNormalDiag(torch.zeros_like(z_enc_dist.mean),
-                                                         torch.ones_like(z_enc_dist.stddev))))
-    return norm_loss
