@@ -12,6 +12,7 @@ from losses import *
 from networks import MultivariateNormalDiag
 
 from latent_map_planar import *
+from latent_map_pendulum import *
 
 torch.set_default_dtype(torch.float64)
 
@@ -126,8 +127,11 @@ def main(args):
     x_dim, z_dim, u_dim = dims[env_name]
     model = PCC(armotized=armotized, x_dim=x_dim, z_dim=z_dim, u_dim=u_dim, env=env_name).to(device)
 
-    if env_name == 'planar' and save_map:
-        mdp = PlanarObstaclesMDP(noise=noise_level)
+    if save_map:
+        if env_name == 'planar':
+            mdp = PlanarObstaclesMDP(noise=noise_level)
+        elif env_name == 'pendulum':
+            mdp = PendulumMDP(noise=noise_level)
 
     optimizer = optim.Adam(model.parameters(), betas=(0.9, 0.999), eps=1e-8, lr=lr, weight_decay=weight_decay)
 
@@ -142,8 +146,11 @@ def main(args):
     with open(result_path + '/settings', 'w') as f:
         json.dump(args.__dict__, f, indent=2)
 
-    if env_name == 'planar' and save_map:
-        latent_maps = [draw_latent_map(model, mdp)]
+    if save_map:
+        if env_name == 'planar':
+            latent_maps = [draw_latent_map(model, mdp)]
+        elif env_name == 'pendulum':
+            show_latent_map(model, mdp)
     for i in range(epoches):
         avg_pred_loss, avg_consis_loss, avg_cur_loss, avg_loss = train(model, data_loader,
                                                                 lam, norm_coeff, optimizer, armotized, i)
@@ -153,10 +160,12 @@ def main(args):
         writer.add_scalar('consistency loss', avg_consis_loss, i)
         writer.add_scalar('curvature loss', avg_cur_loss, i)
         writer.add_scalar('training loss', avg_loss, i)
-        if env_name == 'planar' and save_map:
-            if (i+1) % 10 == 0:
+        if save_map and (i+1) % 10 == 0:
+            if env_name == 'planar':
                 map_i = draw_latent_map(model, mdp)
                 latent_maps.append(map_i)
+            else:
+                show_latent_map(model, mdp)
         # save model
         if (i + 1) % iter_save == 0:
             print('Saving the model.............')

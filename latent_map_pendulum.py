@@ -43,8 +43,10 @@ def assign_latent_color(model, angel, mdp):
         x_with_history = np.vstack((x_next, x))
         x_with_history = ToTensor()(x_with_history).double()
         with torch.no_grad():
-            z = model.encode(x_with_history.view(-1, x_with_history.shape[-1] * x_with_history.shape[-2])).mean
-        all_z_for_angle.append(z.detach().squeeze().numpy())
+            if next(model.parameters()).is_cuda:
+                x_with_history = x_with_history.cuda()
+            z = model.encode(x_with_history.view(-1, x_with_history.shape[-1] * x_with_history.shape[-2]))
+        all_z_for_angle.append(z.detach().squeeze().cpu().numpy())
     return all_z_for_angle
 
 def show_latent_map(model, mdp):
@@ -62,6 +64,10 @@ def show_latent_map(model, mdp):
 
     z_min = np.min(all_z, axis=0)
     z_max = np.max(all_z, axis=0)
+    z_mean = np.mean(all_z, axis=0)
+    print ('z_min: ' + str(z_min))
+    print ('z_max: ' + str(z_max))
+    print ('z_mean: ' + str(z_mean))
     all_z = 2 * (all_z - z_min) / (z_max - z_min) - 1.0
     all_z = all_z * 35
 
@@ -74,7 +80,7 @@ def show_latent_map(model, mdp):
     zdata = all_z[:, 2]
 
     ax.scatter(xdata, ydata, zdata, c=colors_list, marker='o', s=10)
-    plt.show()
+    # plt.show()
 
 def main(args):
     log_path = args.log_path
