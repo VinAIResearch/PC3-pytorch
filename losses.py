@@ -12,7 +12,14 @@ def repeat_dist(dist, bacth_size, z_dim):
     sttdev = sttdev.repeat(1, bacth_size).view(-1, z_dim)
     return MultivariateNormalDiag(mean, sttdev)
 
-def nce(z_next_trans_dist, z_next_enc):
+def repeat_dist_2(dist, bacth_size, z_dim):
+    # [dist1, dist2, dist3] -> [dist1, dist1, dist1, dist2, dist2, dist2, dist3, dist3, dist3]
+    mean, sttdev = dist.mean, dist.stddev
+    mean = mean.repeat(bacth_size, 1)
+    sttdev = sttdev.repeat(bacth_size, 1)
+    return MultivariateNormalDiag(mean, sttdev)
+
+def nce_1(z_next_trans_dist, z_next_enc):
     """
     z_next_trans_dist: p(.|z, u)
     z_next_enc: samples from p(.|x')
@@ -23,6 +30,28 @@ def nce(z_next_trans_dist, z_next_enc):
     z_next_enc_rep = z_next_enc.repeat(batch_size, 1)
 
     # scores[i, j] = p(z'_j | z_i, u_i)
+    scores = z_next_trans_dist_rep.log_prob(z_next_enc_rep).view(batch_size, batch_size)
+    with torch.no_grad():
+        normalize = torch.max(scores, dim=-1)[0].view(-1,1)
+    scores = scores - normalize
+    scores = torch.exp(scores)
+
+    # I_NCE
+    positive_samples = scores.diag()
+    avg_negative_samples = torch.mean(scores, dim=-1)
+    return - torch.mean(torch.log(positive_samples / avg_negative_samples + 1e-8))
+
+def nce_2(z_next_trans_dist, z_next_enc):
+    """
+    z_next_trans_dist: p(.|z, u)
+    z_next_enc: samples from p(.|x')
+    """
+    batch_size, z_dim = z_next_enc.size(0), z_next_enc.size(1)
+
+    z_next_trans_dist_rep = repeat_dist_2(z_next_trans_dist, batch_size, z_dim)
+    z_next_enc_rep = z_next_enc.repeat(1, batch_size).view(-1, z_dim)
+
+    # scores[i, j] = p(z'_i | z_j, u_j)
     scores = z_next_trans_dist_rep.log_prob(z_next_enc_rep).view(batch_size, batch_size)
     with torch.no_grad():
         normalize = torch.max(scores, dim=-1)[0].view(-1,1)
