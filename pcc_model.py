@@ -35,4 +35,14 @@ class PCC(nn.Module):
         z_next_trans_dist, _, _ = self.transition(z_enc, u) # P(z^_t+1 | z_t, u _t)
         z_next_enc = self.encode(x_next)  # deterministic Q(z^_t+1 | x_t+1)
 
+        # noise = torch.randn(size=z_enc.size())
+        # if next(self.encoder.parameters()).is_cuda:
+        #     noise = noise.cuda()
+        # z_enc += noise
+
+        noise_2 = torch.randn(size=z_next_enc.size()) * 0.05
+        if next(self.encoder.parameters()).is_cuda:
+            noise_2 = noise_2.cuda()
+        z_next_enc += noise_2
+
         return z_enc, z_next_trans_dist, z_next_enc

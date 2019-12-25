@@ -73,12 +73,12 @@ def draw_latent_map(model, mdp):
 
     # normalize and scale to plot
     z_min = np.min(all_z, axis = 0)
-    # print ('z_min: ' + str(z_min))
+    print ('z_min: ' + str(z_min))
     z_max = np.max(all_z, axis=0)
-    # print ('z max: ' + str(z_max))
+    print ('z max: ' + str(z_max))
     z_mean = np.mean(all_z, axis=0)
-    # print ('z mean: ' + str(z_mean))
-    all_z = np.round(30 * (all_z - z_min)).astype(np.int)
+    print ('z mean: ' + str(z_mean))
+    all_z = np.round(25 * (all_z - z_min)).astype(np.int)
 
     # plot
     latent_map = {}

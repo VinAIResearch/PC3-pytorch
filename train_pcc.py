@@ -37,18 +37,21 @@ def compute_loss(model, armotized, u,
     # nce_loss = nce_1(z_next_trans_dist, z_next_enc)
     nce_loss = nce_2(z_next_trans_dist, z_next_enc)
 
-
     consis_loss = - torch.mean(z_next_trans_dist.log_prob(z_next_enc))
 
     # curvature loss
     cur_loss = curvature(model, z_enc, u, delta, armotized)
     # new_cur_loss = new_curvature(model, z_enc, u)
 
-    # additional norm loss to normalize the latent space
+    # additional norm loss to center z range to (0,0)
     norm_loss = torch.sum(torch.mean(z_enc, dim=0).pow(2))
 
+    # additional norm loss to avoid collapsing
+    avg_norm_2 = torch.mean(torch.sum(z_enc.pow(2), dim=1))
+
     lam_nce, lam_c, lam_cur = lam
-    return nce_loss, consis_loss, cur_loss, norm_loss, lam_nce * nce_loss + lam_c * consis_loss + lam_cur * cur_loss + norm_coeff * norm_loss
+    return nce_loss, consis_loss, cur_loss, norm_loss, avg_norm_2,\
+        lam_nce * nce_loss + lam_c * consis_loss + lam_cur * cur_loss + norm_coeff * norm_loss
     # return nce_loss, consis_loss, cur_loss, lam_nce * nce_loss + lam_c * consis_loss + lam_cur * cur_loss
 
 def train(model, train_loader, lam, norm_coeff, optimizer, armotized, epoch):
@@ -56,6 +59,7 @@ def train(model, train_loader, lam, norm_coeff, optimizer, armotized, epoch):
     avg_consis_loss = 0.0
     avg_cur_loss = 0.0
     avg_norm_loss = 0.0
+    avg_norm_2_loss = 0.0
     avg_loss = 0.0
 
     num_batches = len(train_loader)
@@ -69,7 +73,7 @@ def train(model, train_loader, lam, norm_coeff, optimizer, armotized, epoch):
 
         z_enc, z_next_trans_dist, z_next_enc = model(x, u, x_next)
 
-        nce_loss, consis_loss, cur_loss, norm_loss, loss = compute_loss(
+        nce_loss, consis_loss, cur_loss, norm_loss, norm_2, loss = compute_loss(
                 model, armotized, u,
                 z_enc, z_next_trans_dist, z_next_enc,
                 lam=lam, norm_coeff=norm_coeff)
@@ -81,12 +85,14 @@ def train(model, train_loader, lam, norm_coeff, optimizer, armotized, epoch):
         avg_consis_loss += consis_loss.item()
         avg_cur_loss += cur_loss.item()
         avg_norm_loss += norm_loss.item()
+        avg_norm_2_loss += norm_2.item()
         avg_loss += loss.item()
 
     avg_nce_loss /= num_batches
     avg_consis_loss /= num_batches
     avg_cur_loss /= num_batches
     avg_norm_loss /= num_batches
+    avg_norm_2_loss /= num_batches
     avg_loss /= num_batches
 
     if (epoch + 1) % 1 == 0:
@@ -95,6 +101,7 @@ def train(model, train_loader, lam, norm_coeff, optimizer, armotized, epoch):
         print("Consistency loss: %f" % (avg_consis_loss))
         print("Curvature loss: %f" % (avg_cur_loss))
         print("Normalization loss: %f" % (avg_norm_loss))
+        print("Norma 2 loss: %f" % (avg_norm_2_loss))
         print("Training loss: %f" % (avg_loss))
         print('--------------------------------------')
 
@@ -208,7 +215,7 @@ if __name__ == "__main__":
     parser.add_argument('--lam_nce', default=1.0, type=float, help='weight of prediction loss')
     parser.add_argument('--lam_c', default=1.0, type=float, help='weight of consistency loss')
     parser.add_argument('--lam_cur', default=1.0, type=float, help='weight of curvature loss')
-    parser.add_argument('--norm_coeff', default=1, type=float, help='coefficient of additional normalization loss')
+    parser.add_argument('--norm_coeff', default=0.1, type=float, help='coefficient of additional normalization loss')
     parser.add_argument('--lr', default=0.0005, type=float, help='learning rate')
     parser.add_argument('--decay', default=0.001, type=float, help='L2 regularization')
     parser.add_argument('--num_iter', default=2000, type=int, help='number of epoches')
