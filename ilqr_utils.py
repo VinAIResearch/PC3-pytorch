@@ -274,3 +274,6 @@ def save_traj(images, image_goal, gif_path, task):
     writer = Writer(fps=fps, metadata=dict(artist='Me'), bitrate=1800)
 
     anim.save(gif_path, writer=writer)
+
+    plt.clf()
+    plt.cla()

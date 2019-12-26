@@ -74,15 +74,8 @@ def show_latent_map(model, mdp):
     ydata = all_z[:, 1]
     zdata = all_z[:, 2]
 
-    # colors_list = np.array(colors_list)
-    # all_z = np.concatenate((all_z, colors_list), axis=1)
-    # print (all_z.shape)
-
     ax.scatter(xdata, ydata, zdata, c=colors_list, marker='o', s=10)
-    plt.show()
-    # fig = px.scatter_3d(all_z, x=0, y=1, z=2,
-    #                     color=[3,4,5])
-    # fig.show()
+    # plt.show()
 
 def main(args):
     gym = args.gym
