@@ -78,23 +78,6 @@ def backward(R_z, R_u, z_seq, u_seq, z_goal, A_seq, B_seq, inv_regulator):
         V_prime_next_z, V_prime_next_zz = V_prime_z, V_prime_zz
     return k, K
 
-# def forward(u_seq, k_seq, K_seq, A_seq, B_seq, alpha):
-#     """
-#     update the trajectory, given k and K
-#     !!!! update using the linearization matricies (A and B), not the learned dynamics
-#     """
-#     u_new_seq = []
-#     plan_len = len(u_seq)
-#     z_dim = K_seq[0].shape[1]
-#     for i in range(0, plan_len):
-#         if i == 0:
-#             z_delta = np.zeros(z_dim)
-#         else:
-#             z_delta = np.matmul(A_seq[i-1], z_delta) + np.matmul(B_seq[i-1], u_delta)
-#         u_delta = alpha * (k_seq[i] + np.matmul(K_seq[i], z_delta))
-#         u_new_seq.append(u_seq[i] + u_delta)
-#     return np.array(u_new_seq)
-
 def forward(z_seq, u_seq, k, K, dynamics, alpha):
     """
     update the trajectory, given k and K
@@ -118,7 +101,7 @@ def get_x_data(mdp, state, config):
     if config['task'] == 'plane':
         x_dim = np.prod(x_dim)
         x_data = torch.from_numpy(image_data).double().view(x_dim).unsqueeze(0)
-    elif config['task'] in ['swing', 'balance']:
+    elif config['task'] in ['swing', 'balance', 'swing_gym', 'balance_gym']:
         x_dim = np.prod(x_dim)
         x_data = np.vstack((image_data, image_data))
         x_data = torch.from_numpy(x_data).double().view(x_dim).unsqueeze(0)
@@ -133,7 +116,7 @@ def update_horizon_start(mdp, s, u, encoder, config):
     s_next = mdp.transition_function(s, u)
     if config['task'] == 'plane':
         x_next = get_x_data(mdp, s_next, config)
-    elif config['task'] in ['swing', 'balance']:
+    elif config['task'] in ['swing', 'balance', 'swing_gym', 'balance_gym']:
         obs = mdp.render(s).squeeze()
         obs_next = mdp.render(s_next).squeeze()
         obs_stacked = np.vstack((obs, obs_next))
@@ -203,17 +186,6 @@ def update_seq_act(z_seq, z_start, u_seq, k, K, dynamics):
             z_new = z_new.squeeze().numpy()
         u_seq_new.append(u_new)
     return np.array(u_seq_new)
-
-# def refresh_actions_trajs(length, all_z_seq, z_start_horizon, all_actions_trajs, all_k_small, all_K_big, dynamics):
-#     for traj_id in range(len(all_actions_trajs)):
-#         all_actions_trajs[traj_id] = update_seq_act(all_z_seq[traj_id][1:], z_start_horizon,
-#                                                     all_actions_trajs[traj_id][1:], all_k_small[traj_id][1:],
-#                                                     all_K_big[traj_id][1:], dynamics)
-#         if len(all_actions_trajs[traj_id]) < length:
-#             # Duplicate last action.
-#             all_actions_trajs[traj_id] = \
-#                 np.append(all_actions_trajs[traj_id], all_actions_trajs[traj_id][-1].reshape(1,-1), axis=0)
-#     return all_actions_trajs
 
 def compute_latent_traj(z_start, u_seq, dynamics):
     plan_len = len(u_seq)
@@ -290,20 +262,15 @@ def save_traj(images, image_goal, gif_path, task):
         m2.set_data(image_goal)
         return m1, m2
 
+    frames = len(images)
     if task == 'plane':
-        anim = FuncAnimation(
-            fig, updatemat2, frames=40, interval=200, blit=True, repeat=True)
-        Writer = writers['imagemagick']  # animation.writers.avail
-        writer = Writer(fps=4, metadata=dict(artist='Me'), bitrate=1800)
-    elif task == 'swing':
-        anim = FuncAnimation(
-            fig, updatemat2, frames=400, interval=200, blit=True, repeat=True)
-        Writer = writers['imagemagick']  # animation.writers.avail
-        writer = Writer(fps=20, metadata=dict(artist='Me'), bitrate=1800)
-    elif task in ['balance', 'cartpole']:
-        anim = FuncAnimation(
-            fig, updatemat2, frames=200, interval=200, blit=True, repeat=True)
-        Writer = writers['imagemagick']  # animation.writers.avail
-        writer = Writer(fps=20, metadata=dict(artist='Me'), bitrate=1800)
+        fps = 2
+    else:
+        fps = 20
+
+    anim = FuncAnimation(
+        fig, updatemat2, frames=frames, interval=200, blit=True, repeat=True)
+    Writer = writers['imagemagick']  # animation.writers.avail
+    writer = Writer(fps=fps, metadata=dict(artist='Me'), bitrate=1800)
 
     anim.save(gif_path, writer=writer)

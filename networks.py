@@ -169,6 +169,7 @@ class CartPoleDynamics(Dynamics):
 CONFIG = {
     'planar': (PlanarEncoder, PlanarDynamics),
     'pendulum': (PendulumEncoder, PendulumDynamics),
+    'pendulum_gym': (PendulumEncoder, PendulumDynamics),
     'cartpole': (CartPoleEncoder, CartPoleDynamics)
 }
 

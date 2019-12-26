@@ -8,6 +8,7 @@ import json
 import argparse
 
 from mdp.pendulum_mdp import PendulumMDP
+from mdp.pendulum_gym import PendulumGymMDP
 from pcc_model import PCC
 
 red = Color('red')
@@ -43,10 +44,8 @@ def assign_latent_color(model, angel, mdp):
         x_with_history = np.vstack((x_next, x))
         x_with_history = ToTensor()(x_with_history).double()
         with torch.no_grad():
-            if next(model.parameters()).is_cuda:
-                x_with_history = x_with_history.cuda()
             z = model.encode(x_with_history.view(-1, x_with_history.shape[-1] * x_with_history.shape[-2]))
-        all_z_for_angle.append(z.detach().squeeze().cpu().numpy())
+        all_z_for_angle.append(z.detach().squeeze().numpy())
     return all_z_for_angle
 
 def show_latent_map(model, mdp):
@@ -64,10 +63,6 @@ def show_latent_map(model, mdp):
 
     z_min = np.min(all_z, axis=0)
     z_max = np.max(all_z, axis=0)
-    z_mean = np.mean(all_z, axis=0)
-    print ('z_min: ' + str(z_min))
-    print ('z_max: ' + str(z_max))
-    print ('z_mean: ' + str(z_mean))
     all_z = 2 * (all_z - z_min) / (z_max - z_min) - 1.0
     all_z = all_z * 35
 
@@ -79,15 +74,25 @@ def show_latent_map(model, mdp):
     ydata = all_z[:, 1]
     zdata = all_z[:, 2]
 
+    # colors_list = np.array(colors_list)
+    # all_z = np.concatenate((all_z, colors_list), axis=1)
+    # print (all_z.shape)
+
     ax.scatter(xdata, ydata, zdata, c=colors_list, marker='o', s=10)
-    # plt.show()
+    plt.show()
+    # fig = px.scatter_3d(all_z, x=0, y=1, z=2,
+    #                     color=[3,4,5])
+    # fig.show()
 
 def main(args):
+    gym = args.gym
     log_path = args.log_path
     epoch = args.epoch
 
-    mdp = PendulumMDP()
-
+    if not gym:
+        mdp = PendulumMDP()
+    else:
+        mdp = PendulumGymMDP()
     # load the specified model
     with open(log_path + '/settings', 'r') as f:
         settings = json.load(f)
@@ -98,9 +103,21 @@ def main(args):
 
     show_latent_map(model, mdp)
 
+def str2bool(v):
+    if isinstance(v, bool):
+       return v
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='train pcc model')
 
+    parser.add_argument('--gym', required=True, type=str2bool, nargs='?',
+                        const=True, default=False, help='Pendulum Gym or not')
     parser.add_argument('--log_path', required=True, type=str, help='path to trained model')
     parser.add_argument('--epoch', required=True, type=int, help='load model corresponding to this epoch')
     args = parser.parse_args()
