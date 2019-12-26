@@ -52,9 +52,8 @@ def compute_loss(model, armotized, u,
     lam_nce, lam_c, lam_cur = lam
     return nce_loss, consis_loss, cur_loss, norm_loss, avg_norm_2,\
         lam_nce * nce_loss + lam_c * consis_loss + lam_cur * cur_loss + norm_coeff * norm_loss
-    # return nce_loss, consis_loss, cur_loss, lam_nce * nce_loss + lam_c * consis_loss + lam_cur * cur_loss
 
-def train(model, train_loader, lam, norm_coeff, optimizer, armotized, epoch):
+def train(model, train_loader, lam, norm_coeff, latent_noise, optimizer, armotized, epoch):
     avg_nce_loss = 0.0
     avg_consis_loss = 0.0
     avg_cur_loss = 0.0
@@ -72,6 +71,10 @@ def train(model, train_loader, lam, norm_coeff, optimizer, armotized, epoch):
         optimizer.zero_grad()
 
         z_enc, z_next_trans_dist, z_next_enc = model(x, u, x_next)
+        noise = torch.randn(size=z_next_enc.size()) * latent_noise
+        if next(model.encoder.parameters()).is_cuda:
+            noise = noise.cuda()
+        z_next_enc += noise
 
         nce_loss, consis_loss, cur_loss, norm_loss, norm_2, loss = compute_loss(
                 model, armotized, u,
@@ -122,6 +125,7 @@ def main(args):
     lam = [lam_nce, lam_c, lam_cur]
     norm_coeff = args.norm_coeff
     lr = args.lr
+    latent_noise = args.latent_noise
     weight_decay = args.decay
     epoches = args.num_iter
     iter_save = args.iter_save
@@ -162,7 +166,7 @@ def main(args):
             show_latent_map(model, mdp)
     for i in range(epoches):
         avg_pred_loss, avg_consis_loss, avg_cur_loss, avg_loss = train(model, data_loader,
-                                                                lam, norm_coeff, optimizer, armotized, i)
+                                                                lam, norm_coeff, latent_noise, optimizer, armotized, i)
 
         # ...log the running loss
         writer.add_scalar('NCE loss', avg_pred_loss, i)
@@ -217,6 +221,7 @@ if __name__ == "__main__":
     parser.add_argument('--lam_cur', default=1.0, type=float, help='weight of curvature loss')
     parser.add_argument('--norm_coeff', default=0.1, type=float, help='coefficient of additional normalization loss')
     parser.add_argument('--lr', default=0.0005, type=float, help='learning rate')
+    parser.add_argument('--latent_noise', default=0.05, type=float, help='level of noise added to the latent code')
     parser.add_argument('--decay', default=0.001, type=float, help='L2 regularization')
     parser.add_argument('--num_iter', default=2000, type=int, help='number of epoches')
     parser.add_argument('--iter_save', default=1000, type=int, help='save model and result after this number of iterations')
