@@ -17,8 +17,8 @@ from latent_map_pendulum import *
 torch.set_default_dtype(torch.float64)
 
 device = torch.device("cuda")
-datasets = {'planar': PlanarDataset, 'pendulum': PendulumDataset, 'cartpole': CartPoleDataset, 'pendulum_gym': PendulumGymDataset}
-dims = {'planar': (1600, 2, 2), 'pendulum': (4608, 3, 1), 'cartpole': ((2, 80, 80), 8, 1), 'pendulum_gym': (4608, 3, 1)}
+datasets = {'planar': PlanarDataset, 'pendulum': PendulumDataset, 'cartpole': CartPoleDataset, 'pendulum_gym': PendulumGymDataset, 'mountain_car': MountainCarDataset}
+dims = {'planar': (1600, 2, 2), 'pendulum': (4608, 3, 1), 'cartpole': ((2, 80, 80), 8, 1), 'pendulum_gym': (4608, 3, 1), 'mountain_car': (4800, 3, 1)}
 
 def seed_torch(seed):
     random.seed(seed)
@@ -112,7 +112,7 @@ def train(model, train_loader, lam, norm_coeff, latent_noise, optimizer, armotiz
 
 def main(args):
     env_name = args.env
-    assert env_name in ['planar', 'pendulum', 'pendulum_gym', 'cartpole']
+    assert env_name in ['planar', 'pendulum', 'pendulum_gym', 'cartpole', 'mountain_car']
     armotized = args.armotized
     log_dir = args.log_dir
     seed = args.seed

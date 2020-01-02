@@ -108,6 +108,37 @@ class PendulumDynamics(Dynamics):
             net_A, net_B = None, None
         super(PendulumDynamics, self).__init__(net_hidden, net_mean, net_logstd, net_A, net_B, z_dim, u_dim, armotized)
 
+class MountainCarEncoder(Encoder):
+    def __init__(self, x_dim = 4800, z_dim = 3):
+        net = nn.Sequential(
+            nn.Linear(x_dim, 500),
+            nn.ReLU(),
+
+            nn.Linear(500, 500),
+            nn.ReLU(),
+
+            nn.Linear(500, z_dim)
+        )
+        super(MountainCarEncoder, self).__init__(net, x_dim, z_dim)
+
+class MountainCarDynamics(Dynamics):
+    def __init__(self, armotized, z_dim = 3, u_dim = 1):
+        net_hidden = nn.Sequential(
+            nn.Linear(z_dim + u_dim, 30),
+            nn.ReLU(),
+
+            nn.Linear(30, 30),
+            nn.ReLU()
+        )
+        net_mean = nn.Linear(30, z_dim)
+        net_logstd = nn.Linear(30, z_dim)
+        if armotized:
+            net_A = nn.Linear(30, z_dim*z_dim)
+            net_B = nn.Linear(30, u_dim*z_dim)
+        else:
+            net_A, net_B = None, None
+        super(MountainCarDynamics, self).__init__(net_hidden, net_mean, net_logstd, net_A, net_B, z_dim, u_dim, armotized)
+
 class Flatten(nn.Module):
     def __init__(self):
         super(Flatten, self).__init__()
@@ -170,7 +201,8 @@ CONFIG = {
     'planar': (PlanarEncoder, PlanarDynamics),
     'pendulum': (PendulumEncoder, PendulumDynamics),
     'pendulum_gym': (PendulumEncoder, PendulumDynamics),
-    'cartpole': (CartPoleEncoder, CartPoleDynamics)
+    'cartpole': (CartPoleEncoder, CartPoleDynamics),
+    'mountain_car': (MountainCarEncoder, MountainCarDynamics)
 }
 
 def load_config(name):
