@@ -174,8 +174,8 @@ def main(args):
                 actions_final.append(action_chosen)
                 s_start_horizon, z_start_horizon = update_horizon_start(mdp, s_start_horizon,
                                                                         action_chosen, encoder, config)
-                if mdp.is_fail(s_start_horizon):
-                    break
+                # if mdp.is_fail(s_start_horizon):
+                #     break
                 all_actions_trajs = refresh_actions_trajs(all_actions_trajs, traj_opt_id, mdp,
                                                           np.min([plan_len, horizon - plan_iter]),
                                                           num_uniform, num_extreme)
