@@ -18,7 +18,6 @@
   "frequency": 50,
   "noise": 0.0,
   "torque": 0.65,
-  "epoch": "5000",
 
   "ilqr_iters": 4,
   "horizon_prob": 200,

@@ -8,6 +8,7 @@ from mdp.plane_obstacles_mdp import PlanarObstaclesMDP
 from mdp.pendulum_mdp import PendulumMDP
 from mdp.pendulum_gym import PendulumGymMDP
 from mdp.cartpole_mdp import CartPoleMDP
+from mdp.mountain_car_mdp import MountainCarMDP
 from ilqr_utils import *
 
 seed = 2
@@ -22,15 +23,15 @@ torch.backends.cudnn.deterministic = True
 torch.set_default_dtype(torch.float64)
 
 config_path = {'plane': 'ilqr_config/plane.json', 'swing': 'ilqr_config/swing.json', 'balance': 'ilqr_config/balance.json', 'cartpole': 'ilqr_config/cartpole.json',
-               'swing_gym': 'ilqr_config/swing_gym.json', 'balance_gym': 'ilqr_config/balance_gym.json'}
+               'swing_gym': 'ilqr_config/swing_gym.json', 'balance_gym': 'ilqr_config/balance_gym.json', 'mountain_car': 'ilqr_config/mountain_car.json'}
 env_task = {'planar': ['plane'], 'pendulum': ['swing', 'balance'], 'cartpole': ['cartpole'],
-            'pendulum_gym': ['swing_gym', 'balance_gym']}
-env_data_dim = {'planar': (1600, 2, 2), 'pendulum': ((2,48,48), 3, 1), 'cartpole': ((2,80,80), 8, 1), 'pendulum_gym': ((2,48,48), 3, 1)}
+            'pendulum_gym': ['swing_gym', 'balance_gym'], 'mountain_car': ['mountain_car']}
+env_data_dim = {'planar': (1600, 2, 2), 'pendulum': ((2,48,48), 3, 1), 'cartpole': ((2,80,80), 8, 1), 'pendulum_gym': ((2,48,48), 3, 1), 'mountain_car': ((2,40,60),3,1)}
 
 
 def main(args):
     env_name = args.env
-    assert env_name in ['planar', 'pendulum', 'pendulum_gym', 'cartpole']
+    assert env_name in ['planar', 'pendulum', 'pendulum_gym', 'cartpole', 'mountain_car']
     possible_tasks = env_task[env_name]
     epoch = args.epoch
 
@@ -43,7 +44,7 @@ def main(args):
     # each trained model will perform 10 random tasks
     random_task_id = np.random.choice(len(possible_tasks), size=10)
     x_dim, z_dim, u_dim = env_data_dim[env_name]
-    if env_name in ['planar', 'pendulum', 'pendulum_gym']:
+    if env_name in ['planar', 'pendulum', 'pendulum_gym', 'mountain_car']:
         x_dim = np.prod(x_dim)
 
     # the folder where all trained models are saved
@@ -115,6 +116,8 @@ def main(args):
                 mdp = PendulumGymMDP(noise=config['noise'])
             elif env_name == 'cartpole':
                 mdp = CartPoleMDP(frequency=config['frequency'], noise=config['noise'])
+            elif env_name == 'mountain_car':
+                mdp = MountainCarMDP(noise=config['noise'])
             # get z_start and z_goal
             x_start = get_x_data(mdp, s_start, config)
             x_goal = get_x_data(mdp, s_goal, config)
