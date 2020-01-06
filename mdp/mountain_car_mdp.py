@@ -43,7 +43,7 @@ class MountainCarMDP(gym.Env):
         position = s[0]
         velocity = s[1]
 
-        force = np.clip(u, self.action_range[0], self.action_range[1])[0]
+        force = np.squeeze(np.clip(u, self.action_range[0], self.action_range[1]))
 
         velocity += force * self.power - 0.0025 * math.cos(3 * position)
         if (velocity > self.max_speed): velocity = self.max_speed
