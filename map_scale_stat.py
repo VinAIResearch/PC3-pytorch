@@ -23,6 +23,20 @@ def calc_avg_norm_2(model, env_name, sample_size=5000, noise=0):
             avg_norm_2 += torch.mean(torch.sum(z.pow(2), dim=1))
     return avg_norm_2 / len(data_loader)
 
+def calc_avg_dyn_std(model, env_name, sample_size=5000, noise=0):
+    dataset = datasets[env_name]
+    dataset = dataset(sample_size=sample_size, noise=noise)
+    data_loader = DataLoader(dataset, batch_size=100, shuffle=False, drop_last=False, num_workers=1)
+
+    avg_std = 0.0
+    for x, u, x_next in data_loader:
+        with torch.no_grad():
+            z = model.encode(x)
+            z_next_trans_dist, _, _ = model.transition(z, u)
+            stddev = z_next_trans_dist.stddev.numpy()
+            avg_std += np.mean(stddev, axis=0)
+    return avg_std / len(data_loader)
+
 def main(args):
     env_name = args.env
     assert env_name in ['planar', 'pendulum', 'pendulum_gym', 'cartpole', 'mountain_car']
@@ -34,6 +48,7 @@ def main(args):
         x_dim = np.prod(x_dim)
 
     all_avg_norm_2 = []
+    all_avg_dyn_std = []
     log_folders = [os.path.join(setting_path, dI) for dI in os.listdir(setting_path)
                    if os.path.isdir(os.path.join(setting_path, dI))]
     for log in log_folders:
@@ -47,16 +62,23 @@ def main(args):
         model.eval()
 
         avg_norm_2 = calc_avg_norm_2(model, env_name)
+        avg_std = calc_avg_dyn_std(model, env_name)
         all_avg_norm_2.append(avg_norm_2)
+        all_avg_dyn_std.append(avg_std)
 
     # compute mean and variance
-    # print (all_avg_norm_2)
     all_avg_norm_2 = np.array(all_avg_norm_2)
-    mean = np.mean(all_avg_norm_2)
-    var = np.var(all_avg_norm_2)
+    mean_norm_2 = np.mean(all_avg_norm_2)
+    var_norm_2 = np.var(all_avg_norm_2)
 
-    print ('Mean of average norm 2: ' + str(mean))
-    print ('Variance of average norm 2: ' + str(var))
+    all_avg_dyn_std = np.array(all_avg_dyn_std)
+    mean_dyn_std = np.mean(all_avg_dyn_std, axis=0)
+    var_dyn_std = np.var(all_avg_dyn_std, axis=0)
+
+    print ('Mean of average norm 2: ' + str(mean_norm_2))
+    print ('Variance of average norm 2: ' + str(var_norm_2))
+    print('Mean of average dynamic std: ' + str(mean_dyn_std))
+    print('Variance of average dynamic std: ' + str(var_dyn_std))
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='compute latent map scale statistics')
