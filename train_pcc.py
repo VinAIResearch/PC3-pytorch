@@ -34,8 +34,8 @@ def compute_loss(model, armotized, u,
                 z_enc, z_next_trans_dist, z_next_enc,
                 lam, delta=0.1, norm_coeff=0.01):
     # nce and consistency loss
-    # nce_loss = nce_1(z_next_trans_dist, z_next_enc)
-    nce_loss = nce_2(z_next_trans_dist, z_next_enc)
+    # nce_loss = nce_1(z_next_trans_dist, z_next_enc) # sampling future
+    nce_loss = nce_2(z_next_trans_dist, z_next_enc) # sampling past
 
     consis_loss = - torch.mean(z_next_trans_dist.log_prob(z_next_enc))
 
@@ -221,7 +221,7 @@ if __name__ == "__main__":
     parser.add_argument('--lam_cur', default=1.0, type=float, help='weight of curvature loss')
     parser.add_argument('--norm_coeff', default=0.1, type=float, help='coefficient of additional normalization loss')
     parser.add_argument('--lr', default=0.0005, type=float, help='learning rate')
-    parser.add_argument('--latent_noise', default=0.05, type=float, help='level of noise added to the latent code')
+    parser.add_argument('--latent_noise', default=0.1, type=float, help='level of noise added to the latent code')
     parser.add_argument('--decay', default=0.001, type=float, help='L2 regularization')
     parser.add_argument('--num_iter', default=2000, type=int, help='number of epoches')
     parser.add_argument('--iter_save', default=1000, type=int, help='save model and result after this number of iterations')
