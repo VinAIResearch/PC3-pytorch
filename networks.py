@@ -201,7 +201,7 @@ class ThreePoleEncoder(Encoder):
     def __init__(self, x_dim=(2, 80, 80), z_dim=8):
         x_channels = x_dim[0]
         net = nn.Sequential(
-            nn.Conv2d(in_channels=x_channels, out_channels=62, kernel_size=5, stride=1, padding=2),
+            nn.Conv2d(in_channels=x_channels, out_channels=32, kernel_size=5, stride=1, padding=2),
             nn.ReLU(),
 
             nn.Conv2d(in_channels=32, out_channels=32, kernel_size=5, stride=2, padding=2),
