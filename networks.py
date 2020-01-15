@@ -197,12 +197,56 @@ class CartPoleDynamics(Dynamics):
             net_A, net_B = None, None
         super(CartPoleDynamics, self).__init__(net_hidden, net_mean, net_logstd, net_A, net_B, z_dim, u_dim, armotized)
 
+class ThreePoleEncoder(Encoder):
+    def __init__(self, x_dim=(2, 80, 80), z_dim=8):
+        x_channels = x_dim[0]
+        net = nn.Sequential(
+            nn.Conv2d(in_channels=x_channels, out_channels=62, kernel_size=5, stride=1, padding=2),
+            nn.ReLU(),
+
+            nn.Conv2d(in_channels=32, out_channels=32, kernel_size=5, stride=2, padding=2),
+            nn.ReLU(),
+
+            nn.Conv2d(in_channels=32, out_channels=32, kernel_size=5, stride=2, padding=2),
+            nn.ReLU(),
+
+            nn.Conv2d(in_channels=32, out_channels=10, kernel_size=5, stride=2, padding=2),
+            nn.ReLU(),
+
+            Flatten(),
+
+            nn.Linear(10*10*10, 200),
+            nn.ReLU(),
+
+            nn.Linear(200, z_dim)
+        )
+        super(ThreePoleEncoder, self).__init__(net, x_dim, z_dim)
+
+class ThreePoleDynamics(Dynamics):
+    def __init__(self, armotized, z_dim=8, u_dim=3):
+        net_hidden = nn.Sequential(
+            nn.Linear(z_dim + u_dim, 40),
+            nn.ReLU(),
+
+            nn.Linear(40, 40),
+            nn.ReLU()
+        )
+        net_mean = nn.Linear(40, z_dim)
+        net_logstd = nn.Linear(40, z_dim)
+        if armotized:
+            net_A = nn.Linear(40, z_dim * z_dim)
+            net_B = nn.Linear(40, u_dim * z_dim)
+        else:
+            net_A, net_B = None, None
+        super(ThreePoleDynamics, self).__init__(net_hidden, net_mean, net_logstd, net_A, net_B, z_dim, u_dim, armotized)
+
 CONFIG = {
     'planar': (PlanarEncoder, PlanarDynamics),
     'pendulum': (PendulumEncoder, PendulumDynamics),
     'pendulum_gym': (PendulumEncoder, PendulumDynamics),
     'cartpole': (CartPoleEncoder, CartPoleDynamics),
-    'mountain_car': (MountainCarEncoder, MountainCarDynamics)
+    'mountain_car': (MountainCarEncoder, MountainCarDynamics),
+    'threepole': (ThreePoleEncoder, ThreePoleDynamics)
 }
 
 def load_config(name):
