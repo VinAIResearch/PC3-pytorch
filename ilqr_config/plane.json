@@ -16,7 +16,7 @@
   "q_weight": 10,
   "r_weight": 1,
 
-  "noise": 0.0,
+  "noise": 1.0,
 
   "ilqr_iters": 4,
   "horizon_prob": 40,

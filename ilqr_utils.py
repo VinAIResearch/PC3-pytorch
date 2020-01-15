@@ -132,7 +132,8 @@ def get_x_data(mdp, state, config):
     return x_data
 
 def update_horizon_start(mdp, s, u, encoder, config):
-    s_next = mdp.take_step(s, u)
+    # s_next = mdp.take_step(s, u)
+    s_next = mdp.transition_function(s, u)
     if config['task'] == 'plane':
         x_next = get_x_data(mdp, s_next, config)
     elif config['task'] in ['swing', 'balance', 'swing_gym', 'balance_gym', 'mountain_car']:
@@ -227,7 +228,8 @@ def traj_opt_actions(s_start, actions_final, mdp):
     obs_traj = [mdp.render(s_start).squeeze()]
     for i, u in enumerate(actions_final):
         u = u.squeeze()
-        s = mdp.take_step(s, u)
+        # s = mdp.take_step(s, u)
+        s = mdp.transition_function(s,u)
         obs_traj.append(mdp.render(s).squeeze())
         goal_counter += mdp.reward_function(s)
     return obs_traj, goal_counter
