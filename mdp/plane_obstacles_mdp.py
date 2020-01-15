@@ -82,7 +82,7 @@ class PlanarObstaclesMDP(object):
         return img_arr
 
     def is_goal(self, s):
-        return np.sqrt(np.sum(s - self.goal) ** 2) <= self.goal_thres
+        return np.sqrt(np.sum((s - self.goal)**2)) <= self.goal_thres
 
     def is_fail(self, s):
         return False
