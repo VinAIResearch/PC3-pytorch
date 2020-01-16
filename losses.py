@@ -113,15 +113,10 @@ def jacobian(dynamics, batched_z, batched_u):
     batch_size = batched_z.size(0)
     z_dim = batched_z.size(-1)
     u_dim = batched_u.size(-1)
-    all_A, all_B = torch.empty(size=(batch_size, z_dim, z_dim)).cuda(),\
-                    torch.empty(size=(batch_size, z_dim, u_dim)).cuda()
-    for i in range(batch_size):
-        z = batched_z[i].view(1,-1)
-        u = batched_u[i].view(1,-1)
-        
-        z, u = z.squeeze().repeat(z_dim, 1), u.squeeze().repeat(z_dim, 1)
-        z_next = dynamics(z, u)[0].mean
-        grad_inp = torch.eye(z_dim).cuda()
-        A, B = torch.autograd.grad(z_next, [z, u], [grad_inp, grad_inp], create_graph=True, retain_graph=True)
-        all_A[i,:,:], all_B[i,:,:] = A, B
+    
+    z, u = batched_z.unsqueeze(1), batched_u.unsqueeze(1) # batch_size, 1, input_dim
+    z, u = z.repeat(1, z_dim, 1), u.repeat(1, z_dim, 1) # batch_size, output_dim, input_dim
+    z_next = dynamics(z, u)[0].mean
+    grad_inp = torch.eye(z_dim).reshape(1, z_dim, z_dim).repeat(batch_size, 1, 1).cuda()
+    all_A, all_B = torch.autograd.grad(z_next, [z, u], [grad_inp, grad_inp], create_graph=True, retain_graph=True)
     return all_A, all_B
