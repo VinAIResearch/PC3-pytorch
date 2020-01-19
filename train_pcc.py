@@ -5,6 +5,7 @@ from torch.utils.data import DataLoader
 import random
 import argparse
 import json
+import time
 
 from pcc_model import PCC
 from datasets import *
@@ -166,6 +167,8 @@ def main(args):
             latent_maps = [draw_latent_map(model, mdp)]
         elif env_name == 'pendulum':
             show_latent_map(model, mdp)
+
+    start = time.time()
     for i in range(epoches):
         avg_pred_loss, avg_consis_loss, avg_cur_loss, avg_loss = train(model, data_loader,
                                                                 lam, norm_coeff, latent_noise, optimizer, armotized, i)
@@ -193,6 +196,9 @@ def main(args):
                                 'Curvature loss: ' + str(avg_cur_loss),
                                 'Training loss: ' + str(avg_loss)
                                 ]))
+    end = time.time()
+    with open(result_path + '/time', 'w') as f:
+        f.write(str(end - start))
     if env_name == 'planar' and save_map:
         latent_maps[0].save(result_path + '/latent_map.gif', format='GIF', append_images=latent_maps[1:], save_all=True, duration=100, loop=0)
     writer.close()
