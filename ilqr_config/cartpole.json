@@ -12,7 +12,7 @@
   "start_max": [0.39269908169872414, 0, 0, 0],
   "goal": [[0, 0, 0, 0]],
 
-  "q_weight": 1000,
+  "q_weight": 2000,
   "r_weight": 1,
 
   "frequency": 50,

@@ -20,7 +20,7 @@ torch.set_default_dtype(torch.float64)
 device = torch.device("cuda")
 datasets = {'planar': PlanarDataset, 'pendulum': PendulumDataset, 'cartpole': CartPoleDataset,
             'pendulum_gym': PendulumGymDataset, 'mountain_car': MountainCarDataset, 'threepole': ThreePoleDataset}
-dims = {'planar': (1600, 2, 2), 'pendulum': (4608, 3, 1), 'cartpole': ((2, 80, 80), 8, 1),
+dims = {'planar': (1600, 2, 2), 'pendulum': (4608, 8, 1), 'cartpole': ((2, 80, 80), 8, 1),
         'pendulum_gym': (4608, 3, 1), 'mountain_car': (4800, 3, 1), 'threepole': ((2, 80, 80), 8, 3)}
 
 def seed_torch(seed):
@@ -44,7 +44,7 @@ def compute_loss(model, armotized, u,
 
     # curvature loss
     cur_loss = curvature(model, z_enc, u, delta, armotized)
-    # new_cur_loss = new_curvature(model, z_enc, u)
+    # cur_loss = new_curvature(model, z_enc, u)
 
     # additional norm loss to center z range to (0,0)
     norm_loss = torch.sum(torch.mean(z_enc, dim=0).pow(2))
@@ -101,15 +101,15 @@ def train(model, train_loader, lam, norm_coeff, latent_noise, optimizer, armotiz
     avg_norm_2_loss /= num_batches
     avg_loss /= num_batches
 
-    if (epoch + 1) % 1 == 0:
-        print('Epoch %d' % (epoch+1))
-        print("NCE loss: %f" % (avg_nce_loss))
-        print("Consistency loss: %f" % (avg_consis_loss))
-        print("Curvature loss: %f" % (avg_cur_loss))
-        print("Normalization loss: %f" % (avg_norm_loss))
-        print("Norma 2 loss: %f" % (avg_norm_2_loss))
-        print("Training loss: %f" % (avg_loss))
-        print('--------------------------------------')
+    # if (epoch + 1) % 1 == 0:
+    #     print('Epoch %d' % (epoch+1))
+    #     print("NCE loss: %f" % (avg_nce_loss))
+    #     print("Consistency loss: %f" % (avg_consis_loss))
+    #     print("Curvature loss: %f" % (avg_cur_loss))
+    #     print("Normalization loss: %f" % (avg_norm_loss))
+    #     print("Norma 2 loss: %f" % (avg_norm_2_loss))
+    #     print("Training loss: %f" % (avg_loss))
+    #     print('--------------------------------------')
 
     return avg_nce_loss, avg_consis_loss, avg_cur_loss, avg_loss
 
@@ -172,7 +172,6 @@ def main(args):
     for i in range(epoches):
         avg_pred_loss, avg_consis_loss, avg_cur_loss, avg_loss = train(model, data_loader,
                                                                 lam, norm_coeff, latent_noise, optimizer, armotized, i)
-
         # ...log the running loss
         writer.add_scalar('NCE loss', avg_pred_loss, i)
         writer.add_scalar('consistency loss', avg_consis_loss, i)
@@ -186,7 +185,7 @@ def main(args):
                 show_latent_map(model, mdp)
         # save model
         if (i + 1) % iter_save == 0:
-            print('Saving the model.............')
+            # print('Saving the model.............')
 
             torch.save(model.state_dict(), result_path + '/model_' + str(i + 1))
             with open(result_path + '/loss_' + str(i + 1), 'w') as f:
@@ -197,6 +196,7 @@ def main(args):
                                 'Training loss: ' + str(avg_loss)
                                 ]))
     end = time.time()
+    print ('time: ' + str(end - start))
     with open(result_path + '/time', 'w') as f:
         f.write(str(end - start))
     if env_name == 'planar' and save_map:
