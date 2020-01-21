@@ -26,7 +26,7 @@ torch.set_default_dtype(torch.float64)
 config_path = {'plane': 'ilqr_config/plane.json', 'swing': 'ilqr_config/swing.json', 'balance': 'ilqr_config/balance.json', 'cartpole': 'ilqr_config/cartpole.json',
                'swing_gym': 'ilqr_config/swing_gym.json', 'balance_gym': 'ilqr_config/balance_gym.json', 'mountain_car': 'ilqr_config/mountain_car.json', 'threepole': 'ilqr_config/threepole.json'}
 env_task = {'planar': ['plane'], 'pendulum': ['balance', 'swing'], 'cartpole': ['cartpole'],
-            'pendulum_gym': ['balance_gym', 'swing_gym'], 'mountain_car': ['mountain_car'], 'threepole': 'threepole'}
+            'pendulum_gym': ['balance_gym', 'swing_gym'], 'mountain_car': ['mountain_car'], 'threepole': ['threepole']}
 env_data_dim = {'planar': (1600, 2, 2), 'pendulum': ((2,48,48), 3, 1), 'cartpole': ((2,80,80), 8, 1), 'pendulum_gym': ((2,48,48), 3, 1), 'mountain_car': ((2,40,60),3,1), 'threepole': ((2,80,80), 8, 3)}
 
 def main(args):

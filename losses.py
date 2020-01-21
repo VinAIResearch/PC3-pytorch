@@ -78,8 +78,10 @@ def curvature(model, z, u, delta, armotized):
     f_z = f_z.mean
 
     if not armotized:
-        grad_z, grad_u = torch.autograd.grad(f_z, [z_alias, u_alias], grad_outputs=[eps_z, eps_u], retain_graph=True, create_graph=True)
-        taylor_error = f_z_bar - (grad_z + grad_u) - f_z
+        # grad_z, grad_u = torch.autograd.grad(f_z, [z_alias, u_alias], grad_outputs=[eps_z, eps_u], retain_graph=True, create_graph=True)
+        # taylor_error = f_z_bar - (grad_z + grad_u) - f_z
+        grad_z, = torch.autograd.grad(f_z, z_alias, grad_outputs=eps_z, retain_graph=True, create_graph=True)
+        taylor_error = f_z_bar - grad_z - f_z
         cur_loss = torch.mean(torch.sum(taylor_error.pow(2), dim = 1))
     else:
         z_dim, u_dim = z.size(1), u.size(1)
@@ -116,7 +118,7 @@ def curvature(model, z, u, delta, armotized):
 #     eps_u = eps_u.view(-1, u_dim, 1)
 #     taylor_error = f_z_bar - (torch.bmm(A, eps_z).squeeze() + torch.bmm(B, eps_u).squeeze()) - f_z
 #     cur_loss = torch.mean(torch.sum(taylor_error.pow(2), dim = 1))
-#     return cur_loss
+#     return cur_loss * 50
 
 def new_curvature(model, z, u):
     z_next, _, _, = model.dynamics(z, u)

@@ -20,7 +20,7 @@ torch.set_default_dtype(torch.float64)
 device = torch.device("cuda")
 datasets = {'planar': PlanarDataset, 'pendulum': PendulumDataset, 'cartpole': CartPoleDataset,
             'pendulum_gym': PendulumGymDataset, 'mountain_car': MountainCarDataset, 'threepole': ThreePoleDataset}
-dims = {'planar': (1600, 2, 2), 'pendulum': (4608, 8, 1), 'cartpole': ((2, 80, 80), 8, 1),
+dims = {'planar': (1600, 2, 2), 'pendulum': (4608, 3, 1), 'cartpole': ((2, 80, 80), 8, 1),
         'pendulum_gym': (4608, 3, 1), 'mountain_car': (4800, 3, 1), 'threepole': ((2, 80, 80), 8, 3)}
 
 def seed_torch(seed):
@@ -67,6 +67,8 @@ def train(model, train_loader, lam, norm_coeff, latent_noise, optimizer, armotiz
     num_batches = len(train_loader)
     model.train()
 
+    start = time.time()
+
     for iter, (x, u, x_next) in enumerate(train_loader):
         x = x.to(device).double()
         u = u.to(device).double()
@@ -101,15 +103,16 @@ def train(model, train_loader, lam, norm_coeff, latent_noise, optimizer, armotiz
     avg_norm_2_loss /= num_batches
     avg_loss /= num_batches
 
-    # if (epoch + 1) % 1 == 0:
-    #     print('Epoch %d' % (epoch+1))
-    #     print("NCE loss: %f" % (avg_nce_loss))
-    #     print("Consistency loss: %f" % (avg_consis_loss))
-    #     print("Curvature loss: %f" % (avg_cur_loss))
-    #     print("Normalization loss: %f" % (avg_norm_loss))
-    #     print("Norma 2 loss: %f" % (avg_norm_2_loss))
-    #     print("Training loss: %f" % (avg_loss))
-    #     print('--------------------------------------')
+    if (epoch + 1) % 1 == 0:
+        print('Epoch %d' % (epoch+1))
+        print("NCE loss: %f" % (avg_nce_loss))
+        print("Consistency loss: %f" % (avg_consis_loss))
+        print("Curvature loss: %f" % (avg_cur_loss))
+        print("Normalization loss: %f" % (avg_norm_loss))
+        print("Norma 2 loss: %f" % (avg_norm_2_loss))
+        print("Training loss: %f" % (avg_loss))
+        print ('Training time: %f' % (time.time() - start))
+        print('--------------------------------------')
 
     return avg_nce_loss, avg_consis_loss, avg_cur_loss, avg_loss
 
