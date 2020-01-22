@@ -139,6 +139,53 @@ class MountainCarDynamics(Dynamics):
             net_A, net_B = None, None
         super(MountainCarDynamics, self).__init__(net_hidden, net_mean, net_logstd, net_A, net_B, z_dim, u_dim, armotized)
 
+class ReacherGrayEncoder(Encoder):
+    def __init__(self, x_dim=(2, 64, 64), z_dim=10):
+        x_channels = x_dim[0]
+        
+        net_hidden = nn.Sequential(
+            nn.Conv2d(in_channels=x_channels, out_channels=64, kernel_size=7, stride=1, padding=0),
+            nn.ReLU(),
+
+            nn.Conv2d(in_channels=64, out_channels=32, kernel_size=5, stride=2, padding=0),
+            # nn.ReLU(),
+
+            nn.Conv2d(in_channels=32, out_channels=8, kernel_size=3, stride=2, padding=0),
+            # nn.ReLU(),
+
+            Flatten(),
+
+        )
+        
+        flatten_shape = self.get_flatten_shape(net_hidden)
+        net_hidden.add_module("linear", nn.Linear(flatten_shape, 256))
+        net_hidden.add_module("relu", nn.ReLU())
+        net_hidden.add_module("last", nn.Linear(256, z_dim))
+        super(ReacherGrayEncoder, self).__init__(net_hidden, x_dim, z_dim)
+
+    def get_flatten_shape(self, conv_net):
+        with torch.no_grad():
+            dummy = torch.zeros((1, 2, 64, 64))
+            return (conv_net(dummy)).shape[-1]
+
+class ReacherGrayDynamics(Dynamics):
+    def __init__(self, armotized, z_dim=10, u_dim=2):
+        net_hidden = nn.Sequential(
+            nn.Linear(z_dim + u_dim, 64),
+            nn.ReLU(),
+
+            nn.Linear(64, 64),
+            nn.ReLU()
+        )
+        net_mean = nn.Linear(64, z_dim)
+        net_logstd = nn.Linear(64, z_dim)
+        if armotized:
+            net_A = nn.Linear(64, z_dim * z_dim)
+            net_B = nn.Linear(64, u_dim * z_dim)
+        else:
+            net_A, net_B = None, None
+        super(ReacherGrayDynamics, self).__init__(net_hidden, net_mean, net_logstd, net_A, net_B, z_dim, u_dim, armotized)
+
 class Flatten(nn.Module):
     def __init__(self):
         super(Flatten, self).__init__()
@@ -246,7 +293,8 @@ CONFIG = {
     'pendulum_gym': (PendulumEncoder, PendulumDynamics),
     'cartpole': (CartPoleEncoder, CartPoleDynamics),
     'mountain_car': (MountainCarEncoder, MountainCarDynamics),
-    'threepole': (ThreePoleEncoder, ThreePoleDynamics)
+    'threepole': (ThreePoleEncoder, ThreePoleDynamics),
+    'reacher': (ReacherGrayEncoder, ReacherGrayDynamics),
 }
 
 def load_config(name):
