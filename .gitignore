@@ -7,4 +7,6 @@ result
 logs
 planar
 pendulum
+reacher
 .ipynb_checkpoints/
+run.sh
