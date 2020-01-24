@@ -13,13 +13,13 @@ def repeat_dist(dist, bacth_size, z_dim):
     return MultivariateNormalDiag(mean, sttdev)
 
 def repeat_dist_2(dist, bacth_size, z_dim):
-    # [dist1, dist2, dist3] -> [dist1, dist1, dist1, dist2, dist2, dist2, dist3, dist3, dist3]
+    # [dist1, dist2, dist3] -> [dist1, dist2, dist3, dist1, dist2, dist3, dist1, dist2, dist3]
     mean, sttdev = dist.mean, dist.stddev
     mean = mean.repeat(bacth_size, 1)
     sttdev = sttdev.repeat(bacth_size, 1)
     return MultivariateNormalDiag(mean, sttdev)
 
-def nce_1(z_next_trans_dist, z_next_enc):
+def nce_future(z_next_trans_dist, z_next_enc):
     """
     z_next_trans_dist: p(.|z, u)
     z_next_enc: samples from p(.|x')
@@ -41,7 +41,7 @@ def nce_1(z_next_trans_dist, z_next_enc):
     avg_negative_samples = torch.mean(scores, dim=-1)
     return - torch.mean(torch.log(positive_samples / avg_negative_samples + 1e-8))
 
-def nce_2(z_next_trans_dist, z_next_enc):
+def nce_past(z_next_trans_dist, z_next_enc):
     """
     z_next_trans_dist: p(.|z, u)
     z_next_enc: samples from p(.|x')

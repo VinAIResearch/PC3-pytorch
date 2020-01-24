@@ -37,8 +37,8 @@ def compute_loss(model, armotized, u,
                 z_enc, z_next_trans_dist, z_next_enc,
                 lam, delta=0.1, norm_coeff=0.01):
     # nce and consistency loss
-    nce_loss = nce_1(z_next_trans_dist, z_next_enc) # sampling future
-    # nce_loss = nce_2(z_next_trans_dist, z_next_enc) # sampling past
+    # nce_loss = nce_future(z_next_trans_dist, z_next_enc) # sampling future
+    nce_loss = nce_past(z_next_trans_dist, z_next_enc) # sampling past
 
     consis_loss = - torch.mean(z_next_trans_dist.log_prob(z_next_enc))
 
