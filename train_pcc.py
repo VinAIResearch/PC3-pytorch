@@ -18,6 +18,10 @@ from latent_map_pendulum import *
 torch.set_default_dtype(torch.float64)
 
 device = torch.device("cuda")
+# datasets = {'planar': PlanarDataset, 'pendulum': PendulumDataset, 'cartpole': CartPoleDataset,
+#             'pendulum_gym': PendulumGymDataset, 'mountain_car': MountainCarDataset, 'threepole': ThreePoleDataset, 'reacher': ReacherDataset}
+# dims = {'planar': (1600, 2, 2), 'pendulum': (4608, 3, 1), 'cartpole': ((2, 80, 80), 8, 1),
+#         'pendulum_gym': (4608, 3, 1), 'mountain_car': (4800, 3, 1), 'threepole': ((2, 80, 80), 8, 3), 'reacher': ((2, 64, 64), 10, 2)}
 datasets = {'planar': PlanarDataset, 'pendulum': PendulumDataset, 'cartpole': CartPoleDataset,
             'pendulum_gym': PendulumGymDataset, 'mountain_car': MountainCarDataset, 'threepole': ThreePoleDataset, 'reacher': ReacherDataset}
 dims = {'planar': (1600, 2, 2), 'pendulum': (4608, 3, 1), 'cartpole': ((2, 80, 80), 8, 1),

@@ -8,7 +8,7 @@ from data import sample_planar
 from data import sample_pole
 from data import sample_pend_gym
 from data import sample_mountain_car
-from data import sample_reacher
+# from data import sample_reacher
 
 
 torch.set_default_dtype(torch.float64)
@@ -145,43 +145,43 @@ class PendulumGymDataset(BaseDataset):
             with open(self.data_path + '{:d}_{:.0f}.pt'.format(self.sample_size, self.noise), 'wb') as f:
                 torch.save(data_set, f)
 
-class ReacherDataset(BaseDataset):
-    width = 64
-    height = 64
-    n_channel = 2
-    action_dim = 2
+# class ReacherDataset(BaseDataset):
+#     width = 64
+#     height = 64
+#     n_channel = 2
+#     action_dim = 2
 
-    def __init__(self, sample_size, noise):
-        data_path = 'data/reacher/'
-        super(ReacherDataset, self).__init__(data_path, sample_size, noise)
+#     def __init__(self, sample_size, noise):
+#         data_path = 'data/reacher/'
+#         super(ReacherDataset, self).__init__(data_path, sample_size, noise)
 
-    def _process_image(self, img):
-        x = torch.zeros(size=(self.n_channel, self.width, self.width))
-        x[0, :, :] = torch.from_numpy(img[:, :, 0])
-        x[1, :, :] = torch.from_numpy(img[:, :, 1])
-        return x.unsqueeze(0)
+#     def _process_image(self, img):
+#         x = torch.zeros(size=(self.n_channel, self.width, self.width))
+#         x[0, :, :] = torch.from_numpy(img[:, :, 0])
+#         x[1, :, :] = torch.from_numpy(img[:, :, 1])
+#         return x.unsqueeze(0)
 
-    def _process(self):
-        if self.check_exists():
-            return
-        else:
-            x_numpy_data, u_numpy_data, x_next_numpy_data, state_numpy_data, state_next_numpy_data = \
-                sample_reacher.sample(env_name='reacher', sample_size=self.sample_size, noise=self.noise)
-            data_len = len(x_numpy_data)
+#     def _process(self):
+#         if self.check_exists():
+#             return
+#         else:
+#             x_numpy_data, u_numpy_data, x_next_numpy_data, state_numpy_data, state_next_numpy_data = \
+#                 sample_reacher.sample(env_name='reacher', sample_size=self.sample_size, noise=self.noise)
+#             data_len = len(x_numpy_data)
 
-            # place holder for data
-            data_x = torch.zeros(data_len, self.n_channel, self.height, self.width)
-            data_u = torch.zeros(data_len, self.action_dim)
-            data_x_next = torch.zeros(data_len, self.n_channel, self.height, self.width)
-            for i in range(data_len):
-                data_x[i] = self._process_image(x_numpy_data[i])
-                data_u[i] = torch.from_numpy(u_numpy_data[i])
-                data_x_next[i] = self._process_image(x_next_numpy_data[i])
+#             # place holder for data
+#             data_x = torch.zeros(data_len, self.n_channel, self.height, self.width)
+#             data_u = torch.zeros(data_len, self.action_dim)
+#             data_x_next = torch.zeros(data_len, self.n_channel, self.height, self.width)
+#             for i in range(data_len):
+#                 data_x[i] = self._process_image(x_numpy_data[i])
+#                 data_u[i] = torch.from_numpy(u_numpy_data[i])
+#                 data_x_next[i] = self._process_image(x_next_numpy_data[i])
 
-            data_set = (data_x, data_u, data_x_next)
+#             data_set = (data_x, data_u, data_x_next)
 
-            with open(self.data_path + '{:d}_{:.0f}.pt'.format(self.sample_size, self.noise), 'wb') as f:
-                torch.save(data_set, f)
+#             with open(self.data_path + '{:d}_{:.0f}.pt'.format(self.sample_size, self.noise), 'wb') as f:
+#                 torch.save(data_set, f)
 
 class MountainCarDataset(BaseDataset):
     width = 40
