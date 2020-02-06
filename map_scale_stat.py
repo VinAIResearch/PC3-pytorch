@@ -13,18 +13,16 @@ from mdp.pendulum_mdp import PendulumMDP
 env_data_dim = {'planar': (1600, 2, 2), 'pendulum': ((2,48,48), 3, 1), 'cartpole': ((2,80,80), 8, 1)}
 datasets = {'planar': PlanarDataset, 'pendulum': PendulumDataset, 'cartpole': CartPoleDataset}
 
-def calc_scale(model, mdp, env_name, sample_size=5000, noise=0):
+def calc_scale(model, env_name, sample_size=5000, noise=0):
     dataset = datasets[env_name]
     dataset = dataset(sample_size=sample_size, noise=noise)
     data_loader = DataLoader(dataset, batch_size=100, shuffle=False, drop_last=False, num_workers=1)
 
     avg_norm_2 = 0.0
     avg_dynamics_norm_2 = 0.0
-    for x, _, _ in data_loader:
+    for x, u, _ in data_loader:
         with torch.no_grad():
             z = model.encode(x)
-            u = [mdp.sample_random_action() for _ in range(100)]
-            u = torch.Tensor(u)
             z_next = model.transition(z, u)[0].mean
             avg_norm_2 += torch.mean(torch.sum(z.pow(2), dim=1))
             avg_dynamics_norm_2 += torch.mean(torch.sum(z_next.pow(2), dim=1))
@@ -50,10 +48,6 @@ def calc_avg_dyn_std(model, env_name, sample_size=5000, noise=0):
 def main(args):
     env_name = args.env
     assert env_name in ['planar', 'pendulum', 'cartpole']
-    if env_name == 'planar':
-        mdp = PlanarObstaclesMDP()
-    elif env_name == 'pendulum':
-        mdp = PendulumMDP()
     setting_path = args.setting_path
     epoch = args.epoch
 
@@ -76,7 +70,7 @@ def main(args):
         model.load_state_dict(torch.load(log + '/model_' + str(epoch), map_location='cpu'))
         model.eval()
 
-        avg_norm_2, avg_dyn_norm_2 = calc_scale(model, mdp, env_name)
+        avg_norm_2, avg_dyn_norm_2 = calc_scale(model, env_name)
         avg_std, min_std = calc_avg_dyn_std(model, env_name)
         all_avg_norm_2.append(avg_norm_2)
         all_avg_dyn_norm_2.append(avg_dyn_norm_2)
