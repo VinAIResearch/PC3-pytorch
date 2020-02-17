@@ -18,14 +18,10 @@ from latent_map_pendulum import *
 torch.set_default_dtype(torch.float64)
 
 device = torch.device("cuda")
-# datasets = {'planar': PlanarDataset, 'pendulum': PendulumDataset, 'cartpole': CartPoleDataset,
-#             'pendulum_gym': PendulumGymDataset, 'mountain_car': MountainCarDataset, 'threepole': ThreePoleDataset, 'reacher': ReacherDataset}
-# dims = {'planar': (1600, 2, 2), 'pendulum': (4608, 3, 1), 'cartpole': ((2, 80, 80), 8, 1),
-#         'pendulum_gym': (4608, 3, 1), 'mountain_car': (4800, 3, 1), 'threepole': ((2, 80, 80), 8, 3), 'reacher': ((2, 64, 64), 10, 2)}
 datasets = {'planar': PlanarDataset, 'pendulum': PendulumDataset, 'cartpole': CartPoleDataset,
-            'pendulum_gym': PendulumGymDataset, 'mountain_car': MountainCarDataset, 'threepole': ThreePoleDataset, 'reacher': ReacherDataset}
+            'pendulum_gym': PendulumGymDataset, 'mountain_car': MountainCarDataset, 'threepole': ThreePoleDataset}
 dims = {'planar': (1600, 2, 2), 'pendulum': (4608, 3, 1), 'cartpole': ((2, 80, 80), 8, 1),
-        'pendulum_gym': (4608, 3, 1), 'mountain_car': (4800, 3, 1), 'threepole': ((2, 80, 80), 8, 3), 'reacher': ((2, 64, 64), 10, 2)}
+        'pendulum_gym': (4608, 3, 1), 'mountain_car': (4800, 3, 1), 'threepole': ((2, 80, 80), 8, 3)}
 
 def seed_torch(seed):
     random.seed(seed)
@@ -41,30 +37,28 @@ def compute_loss(model, armotized, u,
                 z_enc, z_next_trans_dist, z_next_enc,
                 lam, delta=0.1, norm_coeff=0.01):
     # nce and consistency loss
-    # nce_loss = nce_future(z_next_trans_dist, z_next_enc) # sampling future
     nce_loss = nce_past(z_next_trans_dist, z_next_enc) # sampling past
 
     consis_loss = - torch.mean(z_next_trans_dist.log_prob(z_next_enc))
 
     # curvature loss
     cur_loss = curvature(model, z_enc, u, delta, armotized)
-    # cur_loss = new_curvature(model, z_enc, u)
 
     # additional norm loss to center z range to (0,0)
-    norm_loss = torch.sum(torch.mean(z_enc, dim=0).pow(2))
+    center_loss = torch.sum(torch.mean(z_enc, dim=0).pow(2))
 
-    # additional norm loss to avoid collapsing
-    avg_norm_2 = torch.mean(torch.sum(z_enc.pow(2), dim=1))
+    # print out to monitor the scale of latent maps, not part of the objective
+    norm_2 = torch.mean(torch.sum(z_enc.pow(2), dim=1))
 
     lam_nce, lam_c, lam_cur = lam
-    return nce_loss, consis_loss, cur_loss, norm_loss, avg_norm_2,\
-        lam_nce * nce_loss + lam_c * consis_loss + lam_cur * cur_loss + norm_coeff * norm_loss
+    return nce_loss, consis_loss, cur_loss, center_loss, norm_2,\
+        lam_nce * nce_loss + lam_c * consis_loss + lam_cur * cur_loss + norm_coeff * center_loss
 
 def train(model, train_loader, lam, norm_coeff, latent_noise, optimizer, armotized, epoch):
     avg_nce_loss = 0.0
     avg_consis_loss = 0.0
     avg_cur_loss = 0.0
-    avg_norm_loss = 0.0
+    avg_center_loss = 0.0
     avg_norm_2_loss = 0.0
     avg_loss = 0.0
 
@@ -85,7 +79,7 @@ def train(model, train_loader, lam, norm_coeff, latent_noise, optimizer, armotiz
             noise = noise.cuda()
         z_next_enc += noise
 
-        nce_loss, consis_loss, cur_loss, norm_loss, norm_2, loss = compute_loss(
+        nce_loss, consis_loss, cur_loss, center_loss, norm_2, loss = compute_loss(
                 model, armotized, u,
                 z_enc, z_next_trans_dist, z_next_enc,
                 lam=lam, norm_coeff=norm_coeff)
@@ -96,14 +90,14 @@ def train(model, train_loader, lam, norm_coeff, latent_noise, optimizer, armotiz
         avg_nce_loss += nce_loss.item()
         avg_consis_loss += consis_loss.item()
         avg_cur_loss += cur_loss.item()
-        avg_norm_loss += norm_loss.item()
+        avg_center_loss += center_loss.item()
         avg_norm_2_loss += norm_2.item()
         avg_loss += loss.item()
 
     avg_nce_loss /= num_batches
     avg_consis_loss /= num_batches
     avg_cur_loss /= num_batches
-    avg_norm_loss /= num_batches
+    avg_center_loss /= num_batches
     avg_norm_2_loss /= num_batches
     avg_loss /= num_batches
 
@@ -112,8 +106,8 @@ def train(model, train_loader, lam, norm_coeff, latent_noise, optimizer, armotiz
         print("NCE loss: %f" % (avg_nce_loss))
         print("Consistency loss: %f" % (avg_consis_loss))
         print("Curvature loss: %f" % (avg_cur_loss))
-        print("Normalization loss: %f" % (avg_norm_loss))
-        print("Norma 2 loss: %f" % (avg_norm_2_loss))
+        print("Center loss: %f" % (avg_center_loss))
+        print("Map scale: %f" % (avg_norm_2_loss))
         print("Training loss: %f" % (avg_loss))
         print ('Training time: %f' % (time.time() - start))
         print('--------------------------------------')
@@ -192,7 +186,7 @@ def main(args):
                 show_latent_map(model, mdp)
         # save model
         if (i + 1) % iter_save == 0:
-            # print('Saving the model.............')
+            print('Saving the model.............')
 
             torch.save(model.state_dict(), result_path + '/model_' + str(i + 1))
             with open(result_path + '/loss_' + str(i + 1), 'w') as f:
@@ -203,7 +197,6 @@ def main(args):
                                 'Training loss: ' + str(avg_loss)
                                 ]))
     end = time.time()
-    print ('time: ' + str(end - start))
     with open(result_path + '/time', 'w') as f:
         f.write(str(end - start))
     if env_name == 'planar' and save_map:

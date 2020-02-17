@@ -19,7 +19,7 @@
   "noise": 0.0,
 
   "ilqr_iters": 4,
-  "horizon_prob": 200,
+  "horizon_prob": 50,
   "plan_len": 5,
   "uniform_trajs": 3,
   "extreme_trajs": 3,
