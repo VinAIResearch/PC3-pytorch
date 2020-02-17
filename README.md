@@ -89,15 +89,7 @@ The code will run iLQR for all trained models for that specific task and compute
 We compare PC3 with two state-of-the-art LCE baselines: PCC ([Levine et al., 2020](https://openreview.net/pdf?id=BJxG_0EtDS)) and SOLAR ([Zhang et al.,
 2019](http://proceedings.mlr.press/v97/zhang19m/zhang19m.pdf)). Specifically, we report the percentage of time spent in the goal region in the underlying system.
 
-|   Task   |         PC3 (all)         |    PCC (all)     |  SOLAR (all)   |       PC3 (top 1)        |       PCC (top 1)        |
-| :------: | :-----------------------: | :--------------: | :------------: | :----------------------: | :----------------------: |
-|  Planar  | $\mathbf{74.35 \pm 0.76}$ | $56.6 \pm 3.15$  |  $68 \pm 3.8$  | $\mathbf{75.5 \pm 0.32}$ | $\mathbf{75.5 \pm 0.32}$ |
-| Balance  | $\mathbf{99.12 \pm 0.66}$ | $91.9 \pm 1.72$  |  $67 \pm 2.6$  |   $\mathbf{100 \pm 0}$   |   $\mathbf{100 \pm 0}$   |
-| Swing Up | $\mathbf{58.4 \pm 3.53}$  | $26.41 \pm 2.64$ | $35.4 \pm 1.9$ |   $\mathbf{84 \pm 0}$    |      $66.9 \pm 3.8$      |
-| Cartpole | $\mathbf{96.26 \pm 0.95}$ | $94.44 \pm 1.34$ | $91.2 \pm 5.4$ | $\mathbf{97.8 \pm 1.4}$  | $\mathbf{97.8 \pm 1.4}$  |
-|  3-link  | $\mathbf{42.4 \pm 3.23}$  | $14.17 \pm 2.2$  |   $0 \pm 0$    |  $\mathbf{78 \pm 1.04}$  |      $45.8 \pm 6.4$      |
-
-<div style="text-align:center">Table 1: Percentage steps in goal state for the average model (all) and top 1 model. Since SOLAR is task-specific, it does not have top 1.</div>
+![result table](sample_results/table_result.png)
 
 Below are videos showing learned policy in 5 tasks.
 
@@ -115,11 +107,7 @@ Below are videos showing learned policy in 5 tasks.
 
 We also compare the quality of learned latent maps between PCC and PC3 in planar and pendulum.
 
-| ![](/home/tungnd/PC3-pytorch/sample_results/pcc_planar_1.png) | ![](/home/tungnd/PC3-pytorch/sample_results/pcc_planar_2.png) | ![](/home/tungnd/PC3-pytorch/sample_results/pc3_planar_1.png) | ![](/home/tungnd/PC3-pytorch/sample_results/pc3_planar_2.png) |
-| :----------------------------------------------------------: | :----------------------------------------------------------: | :----------------------------------------------------------: | :----------------------------------------------------------: |
-| ![](/home/tungnd/PC3-pytorch/sample_results/pcc_pendulum_1.png) | ![](/home/tungnd/PC3-pytorch/sample_results/pcc_pendulum_4.png) |    ![](/home/tungnd/PC3-pytorch/sample_results/pc3_6.png)    |    ![](/home/tungnd/PC3-pytorch/sample_results/pc3_7.png)    |
-
-<div style="text-align:center">Table 2: Top: Planar latent representations; Bottom: Inverted Pendulum latent representations. Left two: PCC, right two: PC3.</div>
+![maps table](sample_results/table_maps.png)
 
 ### Acknowledgment
 
