@@ -1,4 +1,4 @@
-name: pcc
+name: pc3
 channels:
   - pytorch
   - conda-forge

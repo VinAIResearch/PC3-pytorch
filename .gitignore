@@ -7,6 +7,8 @@ result
 logs
 planar
 pendulum
+cartpole
+threepole
 reacher
 .ipynb_checkpoints/
 run.sh

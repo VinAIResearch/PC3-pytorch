@@ -5,9 +5,9 @@ from networks import *
 torch.set_default_dtype(torch.float64)
 # torch.manual_seed(0)
 
-class PCC(nn.Module):
+class PC3(nn.Module):
     def __init__(self, armotized, x_dim, z_dim, u_dim, env):
-        super(PCC, self).__init__()
+        super(PC3, self).__init__()
         enc, dyn = load_config(env)
 
         self.x_dim = x_dim

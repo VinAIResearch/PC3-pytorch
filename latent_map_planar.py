@@ -8,7 +8,7 @@ import os
 import matplotlib.pyplot as plt
 
 from mdp.plane_obstacles_mdp import PlanarObstaclesMDP
-from pcc_model import PCC
+from pc3_model import PC3
 
 blue = Color('blue')
 colors = list(blue.range_to(Color("red"), 40))
@@ -71,17 +71,11 @@ def draw_latent_map(model, mdp):
                 all_z.append(np.copy(z))
     all_z = np.array(all_z)
 
-    # avg_norm_2 = np.mean(np.sum(all_z ** 2, axis=1))
-    # print('avg norm 2: ' + str(avg_norm_2))
-
     # normalize and scale to plot
     z_min = np.min(all_z, axis = 0)
-    # print ('z_min: ' + str(z_min))
-    z_max = np.max(all_z, axis=0)
-    # print ('z max: ' + str(z_max))
-    z_mean = np.mean(all_z, axis=0)
-    # print ('z mean: ' + str(z_mean))
-    all_z = np.round(40 * (all_z - z_min) + 30).astype(np.int)
+    z_max = np.max(all_z, axis = 0)
+    all_z = (all_z - z_min) / (z_max - z_min)
+    all_z = all_z * 350
 
     # plot
     latent_map = {}
@@ -122,7 +116,7 @@ def main(args):
     with open(log_path + '/settings', 'r') as f:
         settings = json.load(f)
     armotized = settings['armotized']
-    model = PCC(armotized, 1600, 2, 2, 'planar')
+    model = PC3(armotized, 1600, 2, 2, 'planar')
     model.load_state_dict(torch.load(log_path + '/model_' + str(epoch), map_location='cpu'))
     model.eval()
 
@@ -136,18 +130,3 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     main(args)
-
-# from mdp.plane_obstacles_mdp import PlanarObstaclesMDP
-# from pcc_model import PCC
-# mdp = PlanarObstaclesMDP()
-# start = 0
-# end = 39
-# invalid_pos = get_invalid_state(mdp, start, end)
-# img_arr, img = random_gradient(start, end, mdp.width, mdp.height, invalid_pos)
-# get_true_map(mdp, start, end, mdp.width, mdp.height, img)
-
-# mdp = PlanarObstaclesMDP()
-# model = PCC(armotized=False, x_dim=1600, z_dim=2, u_dim=2, env = 'planar').cuda()
-# model.load_state_dict(torch.load('./new_mdp_result/planar/log_10/model_5000'))
-# latent_map = draw_latent_map(model, mdp)
-# latent_map.show()

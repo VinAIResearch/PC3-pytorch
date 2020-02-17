@@ -8,8 +8,7 @@ import json
 import argparse
 
 from mdp.pendulum_mdp import PendulumMDP
-from mdp.pendulum_gym import PendulumGymMDP
-from pcc_model import PCC
+from pc3_model import PC3
 
 red = Color('red')
 blue = Color('blue')
@@ -61,9 +60,6 @@ def show_latent_map(model, mdp):
         all_z += all_z_for_angle
     all_z = np.array(all_z)
 
-    # avg_norm_2 = np.mean(np.sum(all_z ** 2, axis=1))
-    # print('avg norm 2: ' + str(avg_norm_2))
-
     z_min = np.min(all_z, axis=0)
     z_max = np.max(all_z, axis=0)
     all_z = 2 * (all_z - z_min) / (z_max - z_min) - 1.0
@@ -81,39 +77,24 @@ def show_latent_map(model, mdp):
     plt.show()
 
 def main(args):
-    gym = args.gym
     log_path = args.log_path
     epoch = args.epoch
 
-    if not gym:
-        mdp = PendulumMDP()
-    else:
-        mdp = PendulumGymMDP()
+    mdp = PendulumMDP()
+
     # load the specified model
     with open(log_path + '/settings', 'r') as f:
         settings = json.load(f)
     armotized = settings['armotized']
-    model = PCC(armotized=armotized, x_dim=4608, z_dim=3, u_dim=1, env='pendulum')
+    model = PC3(armotized=armotized, x_dim=4608, z_dim=3, u_dim=1, env='pendulum')
     model.load_state_dict(torch.load(log_path + '/model_' + str(epoch), map_location='cpu'))
     model.eval()
 
     show_latent_map(model, mdp)
 
-def str2bool(v):
-    if isinstance(v, bool):
-       return v
-    if v.lower() in ('yes', 'true', 't', 'y', '1'):
-        return True
-    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
-        return False
-    else:
-        raise argparse.ArgumentTypeError('Boolean value expected.')
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='train pcc model')
 
-    parser.add_argument('--gym', required=True, type=str2bool, nargs='?',
-                        const=True, default=False, help='Pendulum Gym or not')
     parser.add_argument('--log_path', required=True, type=str, help='path to trained model')
     parser.add_argument('--epoch', required=True, type=int, help='load model corresponding to this epoch')
     args = parser.parse_args()

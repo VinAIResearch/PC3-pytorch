@@ -3,13 +3,11 @@ import os
 import json
 import random
 
-from pcc_model import PCC
+from pc3_model import PC3
 from mdp.plane_obstacles_mdp import PlanarObstaclesMDP
 from mdp.pendulum_mdp import PendulumMDP
-from mdp.pendulum_gym import PendulumGymMDP
 from mdp.cartpole_mdp import CartPoleMDP
 from mdp.three_pole_mdp import ThreePoleMDP
-from mdp.mountain_car_mdp import MountainCarMDP
 from ilqr_utils import *
 
 seed = 2020
@@ -24,14 +22,13 @@ torch.backends.cudnn.deterministic = True
 torch.set_default_dtype(torch.float64)
 
 config_path = {'plane': 'ilqr_config/plane.json', 'swing': 'ilqr_config/swing.json', 'balance': 'ilqr_config/balance.json',
-                'cartpole': 'ilqr_config/cartpole.json', 'threepole': 'ilqr_config/threepole.json',
-               'swing_gym': 'ilqr_config/swing_gym.json', 'balance_gym': 'ilqr_config/balance_gym.json', 'mountain_car': 'ilqr_config/mountain_car.json'}
-env_data_dim = {'planar': (1600, 2, 2), 'pendulum': ((2,48,48), 3, 1), 'cartpole': ((2,80,80), 8, 1), 'threepole': ((2,80,80), 8, 3),
-                'pendulum_gym': ((2,48,48), 3, 1), 'mountain_car': ((2,40,60),3,1)}
+                'cartpole': 'ilqr_config/cartpole.json', 'threepole': 'ilqr_config/threepole.json'}
+env_data_dim = {'planar': (1600, 2, 2), 'pendulum': ((2,48,48), 3, 1),
+                'cartpole': ((2,80,80), 8, 1), 'threepole': ((2,80,80), 8, 3)}
 
 def main(args):
     task_name = args.task
-    assert task_name in ['planar', 'balance', 'swing', 'cartpole', 'threepole', 'pendulum_gym', 'mountain_car']
+    assert task_name in ['planar', 'balance', 'swing', 'cartpole', 'threepole']
     env_name = 'pendulum' if task_name in ['balance', 'swing'] else task_name
 
     setting_path = args.setting_path
@@ -39,7 +36,9 @@ def main(args):
     noise = args.noise
     epoch = args.epoch
     x_dim, z_dim, u_dim = env_data_dim[env_name]
-    if env_name in ['planar', 'pendulum', 'pendulum_gym', 'mountain_car']:
+
+    # non-convolution encoder
+    if env_name in ['planar', 'pendulum']:
         x_dim = np.prod(x_dim)
 
     ilqr_result_path = 'iLQR_result/' + '_'.join([task_name, str(setting), str(noise), str(epoch)])
@@ -83,7 +82,7 @@ def main(args):
         print('iLQR for ' + log_base)
 
         # load the trained model
-        model = PCC(armotized, x_dim, z_dim, u_dim, env_name)
+        model = PC3(armotized, x_dim, z_dim, u_dim, env_name)
         model.load_state_dict(torch.load(log + '/model_' + str(epoch), map_location='cpu'))
         model.eval()
         dynamics = model.dynamics
@@ -122,12 +121,8 @@ def main(args):
             elif env_name == 'pendulum':
                 mdp = PendulumMDP(frequency=config['frequency'],
                                               noise=noise, torque=config['torque'])
-            elif env_name == 'pendulum_gym':
-                mdp = PendulumGymMDP(noise=config['noise'])
             elif env_name == 'cartpole':
                 mdp = CartPoleMDP(frequency=config['frequency'], noise=noise)
-            elif env_name == 'mountain_car':
-                mdp = MountainCarMDP(noise=noise)
             elif env_name == 'threepole':
                 mdp = ThreePoleMDP(frequency=config['frequency'], noise=noise, torque=config['torque'])
             # get z_start and z_goal

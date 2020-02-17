@@ -10,7 +10,7 @@ import argparse
 import json
 import time
 
-from pcc_model import PCC
+from pc3_model import PC3
 from datasets import *
 from losses import *
 from networks import MultivariateNormalDiag
@@ -19,10 +19,10 @@ torch.set_default_dtype(torch.float64)
 
 device = torch.device("cuda")
 
-datasets = {'planar': PlanarDataset, 'pendulum': PendulumDataset, 'cartpole': CartPoleDataset,
-			'pendulum_gym': PendulumGymDataset, 'mountain_car': MountainCarDataset, 'threepole': ThreePoleDataset}
-dims = {'planar': (1600, 2, 2), 'pendulum': (4608, 3, 1), 'cartpole': ((2, 80, 80), 8, 1),
-		'pendulum_gym': (4608, 3, 1), 'mountain_car': (4800, 3, 1), 'threepole': ((2, 80, 80), 8, 3)}
+datasets = {'planar': PlanarDataset, 'pendulum': PendulumDataset,
+			'cartpole': CartPoleDataset, 'threepole': ThreePoleDataset}
+dims = {'planar': (1600, 2, 2), 'pendulum': (4608, 3, 1),
+		'cartpole': ((2, 80, 80), 8, 1), 'threepole': ((2, 80, 80), 8, 3)}
 
 def seed_torch(seed):
 	random.seed(seed)
@@ -34,6 +34,7 @@ def seed_torch(seed):
 	torch.backends.cudnn.benchmark = False
 	torch.backends.cudnn.deterministic = True
 
+# default initialization for linear layers
 def weights_init(m):
 	if isinstance(m, nn.Linear):
 		init.kaiming_uniform_(m.weight, a=math.sqrt(5))
@@ -66,7 +67,7 @@ def compute_loss(model, armotized, u, z_enc, z_next_trans_dist, z_next_enc, opti
 		loss = lam[0] * nce_loss + lam[-1] * cur_loss
 	elif option == 'consistency':
 		loss = lam[1] * consis_loss + lam[-1] * cur_loss
-	return nce_loss, consis_loss, cur_loss, norm_loss, avg_norm_2, loss, 
+	return nce_loss, consis_loss, cur_loss, norm_loss, avg_norm_2, loss
 
 
 def train(model, option, train_loader, lam, latent_noise, optimizer, armotized, epoch):
@@ -130,8 +131,7 @@ def train(model, option, train_loader, lam, latent_noise, optimizer, armotized, 
 
 def main(args):
 	env_name = args.env
-	assert env_name in ['planar', 'pendulum', 'pendulum_gym',
-		'cartpole', 'mountain_car', 'threepole', 'reacher']
+	assert env_name in ['planar', 'pendulum', 'cartpole', 'threepole']
 	option = args.option
 	assert option in ['cpc', 'consistency']
 	load_dir = args.load_dir
@@ -163,7 +163,7 @@ def main(args):
 							 shuffle=True, drop_last=False, num_workers=4)
 
 	x_dim, z_dim, u_dim = dims[env_name]
-	model = PCC(armotized=armotized, x_dim=x_dim, z_dim=z_dim,
+	model = PC3(armotized=armotized, x_dim=x_dim, z_dim=z_dim,
 				u_dim=u_dim, env=env_name).to(device)
 	model.load_state_dict(torch.load(load_dir + '/model_' + str(epoch_load)))
 

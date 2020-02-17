@@ -94,33 +94,13 @@ def forward(z_seq, u_seq, k, K, dynamics, alpha):
         z_seq_new.append(z_new.squeeze().numpy())
     return np.array(z_seq_new), np.array(u_seq_new)
 
-# def forward(u_seq, k_seq, K_seq, A_seq, B_seq, alpha):
-#     """
-#     update the trajectory, given k and K
-#     !!!! update using the linearization matricies (A and B), not the learned dynamics
-#     """
-#     u_new_seq = []
-#     plan_len = len(u_seq)
-#     z_dim = K_seq[0].shape[1]
-#     for i in range(0, plan_len):
-#         if i == 0:
-#             z_delta = np.zeros(z_dim)
-#         else:
-#             z_delta = np.matmul(A_seq[i-1], z_delta) + np.matmul(B_seq[i-1], u_delta)
-#         u_delta = alpha * (k_seq[i] + np.matmul(K_seq[i], z_delta))
-#         u_new_seq.append(u_seq[i] + u_delta)
-#     return np.array(u_new_seq)
-
 def get_x_data(mdp, state, config):
-    if config['task'] == 'mountain_car':
-        image_data = mdp.render_obs(state).squeeze()
-    else:
-        image_data = mdp.render(state).squeeze()
+    image_data = mdp.render(state).squeeze()
     x_dim = config['obs_shape']
     if config['task'] == 'plane':
         x_dim = np.prod(x_dim)
         x_data = torch.from_numpy(image_data).double().view(x_dim).unsqueeze(0)
-    elif config['task'] in ['swing', 'balance', 'swing_gym', 'balance_gym', 'mountain_car']:
+    elif config['task'] in ['swing', 'balance']:
         x_dim = np.prod(x_dim)
         x_data = np.vstack((image_data, image_data))
         x_data = torch.from_numpy(x_data).double().view(x_dim).unsqueeze(0)
@@ -132,17 +112,12 @@ def get_x_data(mdp, state, config):
     return x_data
 
 def update_horizon_start(mdp, s, u, encoder, config):
-    # s_next = mdp.take_step(s, u)
     s_next = mdp.transition_function(s, u)
     if config['task'] == 'plane':
         x_next = get_x_data(mdp, s_next, config)
-    elif config['task'] in ['swing', 'balance', 'swing_gym', 'balance_gym', 'mountain_car']:
-        if config['task'] == 'mountain_car':
-            obs = mdp.render_obs(s).squeeze()
-            obs_next = mdp.render_obs(s_next).squeeze()
-        else:
-            obs = mdp.render(s).squeeze()
-            obs_next = mdp.render(s_next).squeeze()
+    elif config['task'] in ['swing', 'balance']:
+        obs = mdp.render(s).squeeze()
+        obs_next = mdp.render(s_next).squeeze()
         obs_stacked = np.vstack((obs, obs_next))
         x_dim = np.prod(config['obs_shape'])
         x_next = torch.from_numpy(obs_stacked).view(x_dim).unsqueeze(0).double()
@@ -276,10 +251,10 @@ def save_traj(images, image_goal, gif_path, task):
         return m1, m2
 
     frames = len(images)
-    if task == 'plane':
+    if task in ['plane', 'cartpole']:
         fps = 2
     else:
-        fps = 20
+        fps = 10
 
     anim = FuncAnimation(
         fig, updatemat2, frames=frames, interval=200, blit=True, repeat=True)

@@ -7,7 +7,7 @@ import argparse
 import json
 import time
 
-from pcc_model import PCC
+from pc3_model import PC3
 from datasets import *
 from losses import *
 from networks import MultivariateNormalDiag
@@ -18,10 +18,10 @@ from latent_map_pendulum import *
 torch.set_default_dtype(torch.float64)
 
 device = torch.device("cuda")
-datasets = {'planar': PlanarDataset, 'pendulum': PendulumDataset, 'cartpole': CartPoleDataset,
-            'pendulum_gym': PendulumGymDataset, 'mountain_car': MountainCarDataset, 'threepole': ThreePoleDataset}
-dims = {'planar': (1600, 2, 2), 'pendulum': (4608, 3, 1), 'cartpole': ((2, 80, 80), 8, 1),
-        'pendulum_gym': (4608, 3, 1), 'mountain_car': (4800, 3, 1), 'threepole': ((2, 80, 80), 8, 3)}
+datasets = {'planar': PlanarDataset, 'pendulum': PendulumDataset,
+            'cartpole': CartPoleDataset, 'threepole': ThreePoleDataset}
+dims = {'planar': (1600, 2, 2), 'pendulum': (4608, 3, 1),
+        'cartpole': ((2, 80, 80), 8, 1), 'threepole': ((2, 80, 80), 8, 3)}
 
 def seed_torch(seed):
     random.seed(seed)
@@ -116,7 +116,7 @@ def train(model, train_loader, lam, norm_coeff, latent_noise, optimizer, armotiz
 
 def main(args):
     env_name = args.env
-    assert env_name in ['planar', 'pendulum', 'pendulum_gym', 'cartpole', 'mountain_car', 'threepole', 'reacher']
+    assert env_name in ['planar', 'pendulum', 'cartpole', 'threepole']
     armotized = args.armotized
     log_dir = args.log_dir
     seed = args.seed
@@ -142,13 +142,10 @@ def main(args):
     data_loader = DataLoader(data, batch_size=batch_size, shuffle=True, drop_last=False, num_workers=4)
 
     x_dim, z_dim, u_dim = dims[env_name]
-    model = PCC(armotized=armotized, x_dim=x_dim, z_dim=z_dim, u_dim=u_dim, env=env_name).to(device)
+    model = PC3(armotized=armotized, x_dim=x_dim, z_dim=z_dim, u_dim=u_dim, env=env_name).to(device)
 
-    if save_map:
-        if env_name == 'planar':
-            mdp = PlanarObstaclesMDP(noise=noise_level)
-        elif env_name == 'pendulum':
-            mdp = PendulumMDP(noise=noise_level)
+    if save_map and env_name == 'planar':
+        mdp = PlanarObstaclesMDP(noise=noise_level)
 
     optimizer = optim.Adam(model.parameters(), betas=(0.9, 0.999), eps=1e-8, lr=lr, weight_decay=weight_decay)
 
@@ -163,11 +160,8 @@ def main(args):
     with open(result_path + '/settings', 'w') as f:
         json.dump(args.__dict__, f, indent=2)
 
-    if save_map:
-        if env_name == 'planar':
-            latent_maps = [draw_latent_map(model, mdp)]
-        elif env_name == 'pendulum':
-            show_latent_map(model, mdp)
+    if save_map and env_name == 'planar':
+        latent_maps = [draw_latent_map(model, mdp)]
 
     start = time.time()
     for i in range(epoches):
@@ -178,12 +172,11 @@ def main(args):
         writer.add_scalar('consistency loss', avg_consis_loss, i)
         writer.add_scalar('curvature loss', avg_cur_loss, i)
         writer.add_scalar('training loss', avg_loss, i)
-        if save_map and (i+1) % 10 == 0:
-            if env_name == 'planar':
+        if save_map and env_name == 'planar':
+            if (i+1) % 10 == 0:
                 map_i = draw_latent_map(model, mdp)
                 latent_maps.append(map_i)
-            else:
-                show_latent_map(model, mdp)
+
         # save model
         if (i + 1) % iter_save == 0:
             print('Saving the model.............')
