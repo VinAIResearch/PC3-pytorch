@@ -51,12 +51,16 @@ def curvature(model, z, u, delta, armotized):
     z_dim, u_dim = z.size(1), u.size(1)
     if not armotized:
         _, B = get_jacobian(model.dynamics, z_alias, u_alias)
+        grad_z, = torch.autograd.grad(f_z, z_alias, grad_outputs=eps_z, retain_graph=True, create_graph=True)
+        grad_u = torch.bmm(B, eps_u.view(-1, u_dim, 1)).squeeze()
     else:
         A = A.view(-1, z_dim, z_dim)
         B = B.view(-1, z_dim, u_dim)
+        eps_z = eps_z.view(-1, z_dim, 1)
+        eps_u = eps_u.view(-1, u_dim, 1)
+        grad_z = torch.bmm(A, eps_z.view(-1, u_dim, 1)).squeeze()
+        grad_u = torch.bmm(B, eps_u.view(-1, u_dim, 1)).squeeze()
 
-    grad_z, = torch.autograd.grad(f_z, z_alias, grad_outputs=eps_z, retain_graph=True, create_graph=True)
-    grad_u = torch.bmm(B, eps_u.view(-1, u_dim, 1)).squeeze()
     taylor_error = f_z_bar - (grad_z + grad_u) - f_z
     cur_loss = torch.mean(torch.sum(taylor_error.pow(2), dim = 1))
     return cur_loss
@@ -67,8 +71,7 @@ def get_jacobian(dynamics, batched_z, batched_u):
     """
     batch_size = batched_z.size(0)
     z_dim = batched_z.size(-1)
-    u_dim = batched_u.size(-1)
-    
+
     z, u = batched_z.unsqueeze(1), batched_u.unsqueeze(1) # batch_size, 1, input_dim
     z, u = z.repeat(1, z_dim, 1), u.repeat(1, z_dim, 1) # batch_size, output_dim, input_dim
     z_next = dynamics(z, u)[0].mean

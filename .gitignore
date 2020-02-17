@@ -12,3 +12,4 @@ threepole
 reacher
 .ipynb_checkpoints/
 run.sh
+iLQR_result/

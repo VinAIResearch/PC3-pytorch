@@ -254,7 +254,7 @@ def save_traj(images, image_goal, gif_path, task):
     if task in ['plane', 'cartpole']:
         fps = 2
     else:
-        fps = 10
+        fps = 20
 
     anim = FuncAnimation(
         fig, updatemat2, frames=frames, interval=200, blit=True, repeat=True)
