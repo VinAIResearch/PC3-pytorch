@@ -1,6 +1,6 @@
 ## Predictive Coding for Locally-Linear Control
 
-This is a pytorch implementation of the paper "[Predictive Coding for Locally-Linear Control]()". The work was done during the residency at [VinAI Research](https://vinai.io), Hanoi, Vietnam.
+This is a pytorch implementation of the paper "[Predictive Coding for Locally-Linear Control](https://arxiv.org/pdf/2003.01086.pdf)". The work was done during the residency at [VinAI Research](https://vinai.io), Hanoi, Vietnam.
 
 ## Installing
 
@@ -112,3 +112,12 @@ We also compare the quality of learned latent maps between PCC and PC3 in planar
 ### Acknowledgment
 
 ### Citation
+If you find PC3 useful in your research, please consider citing:
+```
+@article{shu2020predictive,
+  title={Predictive Coding for Locally-Linear Control},
+  author={Shu, Rui and Nguyen, Tung and Chow, Yinlam and Pham, Tuan and Than, Khoat and Ghavamzadeh, Mohammad and Ermon, Stefano and Bui, Hung H},
+  journal={arXiv preprint arXiv:2003.01086},
+  year={2020}
+}
+```
