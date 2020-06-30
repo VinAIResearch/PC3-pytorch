@@ -27,8 +27,8 @@ python train_pc3.py \
     --armotized=False \
     --log_dir=planar_1 \
     --seed=1 \
-    --data_size = 5000 \
-    --noise = 0 \
+    --data_size=5000 \
+    --noise=0 \
     --batch_size=256 \
     --latent_noise=0.1 \
     --lam_nce=1.0 \
