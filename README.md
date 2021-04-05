@@ -1,6 +1,6 @@
-## Predictive Coding for Locally-Linear Control
+# Predictive Coding for Locally-Linear Control
 
-This is a pytorch implementation of the paper "[Predictive Coding for Locally-Linear Control](https://arxiv.org/pdf/2003.01086.pdf)". The work was done during the residency at [VinAI Research](https://vinai.io), Hanoi, Vietnam.
+This is a pytorch implementation of the paper "[Predictive Coding for Locally-Linear Control](http://proceedings.mlr.press/v119/shu20a.html)". We propose PC3 - an information-theoretic representation learning framework for optimal control from high-dimensional observations. Experiments show that our proposed method outperforms the existing reconstruction-based approaches significantly. The work was done during the residency at [VinAI Research](https://vinai.io), Hanoi, Vietnam.
 
 ## Installing
 
@@ -112,12 +112,16 @@ We also compare the quality of learned latent maps between PCC and PC3 in planar
 ### Acknowledgment
 
 ### Citation
-If you find PC3 useful in your research, please consider citing:
+Details of the model architecture and experimental results can be found in our [following paper](http://proceedings.mlr.press/v119/shu20a.html):
 ```
-@article{shu2020predictive,
-  title={Predictive Coding for Locally-Linear Control},
-  author={Shu, Rui and Nguyen, Tung and Chow, Yinlam and Pham, Tuan and Than, Khoat and Ghavamzadeh, Mohammad and Ermon, Stefano and Bui, Hung H},
-  journal={arXiv preprint arXiv:2003.01086},
-  year={2020}
+@InProceedings{pmlr-v119-shu20a,
+  title = 	 {Predictive Coding for Locally-Linear Control},
+  author =       {Shu, Rui and Nguyen, Tung and Chow, Yinlam and Pham, Tuan and Than, Khoat and Ghavamzadeh, Mohammad and Ermon, Stefano and Bui, Hung},
+  booktitle = 	 {Proceedings of the 37th International Conference on Machine Learning},
+  year = 	 {2020},
+  volume = 	 {119},
+  series = 	 {Proceedings of Machine Learning Research},
+  publisher =    {PMLR},
 }
 ```
+**Please CITE** our paper whenever this repository is used to help produce published results or incorporated into other software.
