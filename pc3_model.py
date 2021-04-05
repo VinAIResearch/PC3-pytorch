@@ -1,9 +1,11 @@
 import torch
+from networks import load_config
 from torch import nn
-from networks import *
+
 
 torch.set_default_dtype(torch.float64)
 # torch.manual_seed(0)
+
 
 class PC3(nn.Module):
     def __init__(self, armotized, x_dim, z_dim, u_dim, env):
@@ -31,8 +33,8 @@ class PC3(nn.Module):
     def forward(self, x, u, x_next):
         # NCE loss and
         # consistency loss: in deterministic case = -log p(z' | z, u)
-        z_enc = self.encode(x) # deterministic p(z | x)
-        z_next_trans_dist, _, _ = self.transition(z_enc, u) # P(z^_t+1 | z_t, u _t)
+        z_enc = self.encode(x)  # deterministic p(z | x)
+        z_next_trans_dist, _, _ = self.transition(z_enc, u)  # P(z^_t+1 | z_t, u _t)
         z_next_enc = self.encode(x_next)  # deterministic Q(z^_t+1 | x_t+1)
 
         return z_enc, z_next_trans_dist, z_next_enc
