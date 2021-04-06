@@ -2,6 +2,8 @@
 
 This is a pytorch implementation of the paper "[Predictive Coding for Locally-Linear Control](http://proceedings.mlr.press/v119/shu20a.html)". We propose PC3 - an information-theoretic representation learning framework for optimal control from high-dimensional observations. Experiments show that our proposed method outperforms the existing reconstruction-based approaches significantly. The work was done during the residency at [VinAI Research](https://vinai.io), Hanoi, Vietnam.
 
+![pc3 model](sample_results/pc3_model.png)
+
 ## Installing
 
 First, clone the repository:
