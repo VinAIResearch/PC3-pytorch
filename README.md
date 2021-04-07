@@ -1,8 +1,22 @@
 # Predictive Coding for Locally-Linear Control
 
-This is a pytorch implementation of the paper "[Predictive Coding for Locally-Linear Control](http://proceedings.mlr.press/v119/shu20a.html)". We propose PC3 - an information-theoretic representation learning framework for optimal control from high-dimensional observations. Experiments show that our proposed method outperforms the existing reconstruction-based approaches significantly. The work was done during the residency at [VinAI Research](https://vinai.io), Hanoi, Vietnam.
+This is a pytorch implementation of the paper "[Predictive Coding for Locally-Linear Control](http://proceedings.mlr.press/v119/shu20a.html)". We propose PC3 - an information-theoretic representation learning framework for optimal control from high-dimensional observations. Experiments show that our proposed method outperforms the existing reconstruction-based approaches significantly.
 
 ![pc3 model](sample_results/pc3_model.png)
+
+Details of the model architecture and experimental results can be found in our [following paper](http://proceedings.mlr.press/v119/shu20a.html):
+```
+@InProceedings{pmlr-v119-shu20a,
+  title = 	 {Predictive Coding for Locally-Linear Control},
+  author =       {Shu, Rui and Nguyen, Tung and Chow, Yinlam and Pham, Tuan and Than, Khoat and Ghavamzadeh, Mohammad and Ermon, Stefano and Bui, Hung},
+  booktitle = 	 {Proceedings of the 37th International Conference on Machine Learning},
+  year = 	 {2020},
+  volume = 	 {119},
+  series = 	 {Proceedings of Machine Learning Research},
+  publisher =    {PMLR},
+}
+```
+**Please CITE** our paper whenever this repository is used to help produce published results or incorporated into other software.
 
 ## Installing
 
@@ -21,7 +35,7 @@ conda activate pc3
 
 ## Training
 
-The code currently supports training for `planar`, `pendulum`, `cartpole` and `3-link` environment. Run the `train_pc3.py` with your own settings. For example:
+The code currently supports training for `planar`, `pendulum`, `cartpole` and `3-link` environment. Run `train_pc3.py` with your own settings. For example:
 
 ```
 python train_pc3.py \
@@ -62,7 +76,7 @@ python latent_map_pendulum.py --log_path={log_to_trained_model} --epoch={epoch}
 
 ## Data visualization
 
-You can generate the training images for visualization by simply running:
+You can generate training images for visualization purpose by simply running:
 
 ```
 cd data
@@ -111,19 +125,3 @@ We also compare the quality of learned latent maps between PCC and PC3 in planar
 
 ![maps table](sample_results/table_maps.png)
 
-### Acknowledgment
-
-### Citation
-Details of the model architecture and experimental results can be found in our [following paper](http://proceedings.mlr.press/v119/shu20a.html):
-```
-@InProceedings{pmlr-v119-shu20a,
-  title = 	 {Predictive Coding for Locally-Linear Control},
-  author =       {Shu, Rui and Nguyen, Tung and Chow, Yinlam and Pham, Tuan and Than, Khoat and Ghavamzadeh, Mohammad and Ermon, Stefano and Bui, Hung},
-  booktitle = 	 {Proceedings of the 37th International Conference on Machine Learning},
-  year = 	 {2020},
-  volume = 	 {119},
-  series = 	 {Proceedings of Machine Learning Research},
-  publisher =    {PMLR},
-}
-```
-**Please CITE** our paper whenever this repository is used to help produce published results or incorporated into other software.
